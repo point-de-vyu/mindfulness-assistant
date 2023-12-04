@@ -1,5 +1,4 @@
 import sqlalchemy
-import urllib
 import random
 import time
 from api_backend.app.schemes.user import User
@@ -19,15 +18,6 @@ class UserManager:
 
     def add_new_user(self, user: User):
         user_id = self._generate_user_id()
-
-        # self.sql_connection.execute(sqlalchemy.text(f"INSERT INTO users(id, username, first_name, last_name, date_registered) "
-        #                                       f"VALUES("
-        #                       f"'{user_id}',"
-        #                       f"'{user.username}',"
-        #                       f"'{user.first_name}',"
-        #                       f"'{user.last_name}',"
-        #                       f"NOW());"
-        #                       ))
         query = sqlalchemy.insert(self.users_table).values(
             id=user_id,
             username=user.username,
