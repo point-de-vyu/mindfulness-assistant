@@ -1,6 +1,5 @@
 import sqlalchemy
-import random
-import time
+from sqlalchemy import func
 from api_backend.app.schemes.user import User
 from api_backend.app.utils import get_postgres_engine
 import logging
@@ -19,9 +18,8 @@ class UserManager:
         self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
 
     def add_new_user(self, user: User):
-        user_id = self._generate_user_id()
         query = sqlalchemy.insert(self.users_table).values(
-            id=user_id,
+            id=func.generate_user_id(),
             username=user.username,
             first_name=user.first_name,
             last_name=user.last_name,
@@ -30,14 +28,6 @@ class UserManager:
         executed_query = self.sql_connection.execute(query)
         self.sql_connection.commit()
         return executed_query.inserted_primary_key
-
-    @staticmethod
-    def _generate_user_id() -> int:
-        # 64-bit signed int ID (BIGINT in SQL). The first decimal digit is the ID type.
-        # The Second, the third anfloor(random() * 99999999)d the fourth decimal digits are ID subtype
-        # Next 5 digits are random int
-        # Then the 32-bit timestamp
-        return 1000000000000000000 + random.randint(0, 99999) * 10000000000 + int(time.time())
 
     # def get_user_by_username(self, username: str):
     #     query = sqlalchemy.select(self.users_table).where(self.users_table.c.username == username)
