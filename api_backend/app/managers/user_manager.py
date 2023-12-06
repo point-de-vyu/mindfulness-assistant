@@ -3,6 +3,8 @@ import random
 import time
 from api_backend.app.schemes.user import User
 from api_backend.app.utils import get_postgres_engine
+import logging
+from typing import Dict, List
 
 
 class UserManager:
@@ -37,20 +39,45 @@ class UserManager:
         # Then the 32-bit timestamp
         return 1000000000000000000 + random.randint(0, 99999) * 10000000000 + int(time.time())
 
-    def get_users(self):
-        # res = self.sql_connection.execute(sqlalchemy.text(f"SELECT * FROM users"))
-        query = sqlalchemy.select(self.users_table)
-        executed_query = self.sql_connection.execute(query)
-        rows = executed_query.fetchall()
-        # LESSON_LEARNT: trying to return row objects causes errors with fastapi decoder. Using _asdict() to get dict
-        result_dicts = [row._asdict() for row in rows]
-        return result_dicts
+    # def get_user_by_username(self, username: str):
+    #     query = sqlalchemy.select(self.users_table).where(self.users_table.c.username == username)
+    #     executed_query = self.sql_connection.execute(query)
+    #     rows = executed_query.fetchmany()
+    #     if len(rows) > 1:
+    #         raise RuntimeError(f"found {len(rows)} rows")
+    #     # LESSON_LEARNT: trying to return row objects causes errors with fastapi decoder. Using _asdict() to get dict
+    #     result_dicts = [row._asdict() for row in rows]
+    #     return result_dicts
 
-    def get_user_by_username(self, username: str):
-        query = sqlalchemy.select(self.users_table).where(self.users_table.c.username == username)
+    def get_users(
+            self,
+            id: int | None = None,
+            username: str | None = None,
+            first_name: str | None = None,
+            last_name: str | None = None,
+            date_registered: str | None = None
+    ) -> List[User]:
+        def find_not_null_params() -> Dict[str, str | int]:
+            column_to_val = {}
+            if id is not None:
+                column_to_val["id"] = id
+            if username is not None:
+                column_to_val["username"] = username
+            if first_name is not None:
+                column_to_val["first_name"] = first_name
+            if last_name is not None:
+                column_to_val["last_name"] = last_name
+            if date_registered is not None:
+                column_to_val["date_registered"] = date_registered
+            return column_to_val
+
+        params = find_not_null_params()
+        # logging.log(level=0, msg=params)
+        query = sqlalchemy.select(self.users_table)
+        if params:
+            query = query.filter_by(**params)
         executed_query = self.sql_connection.execute(query)
-        rows = executed_query.fetchmany()
-        if len(rows) > 1:
-            raise RuntimeError(f"found {len(rows)} rows")
-        result_dicts = [row._asdict() for row in rows]
+        # will need caution with fetchall for q with no params if loads of users
+        rows = executed_query.fetchall()
+        result_dicts = [User(**row._asdict()) for row in rows]
         return result_dicts
