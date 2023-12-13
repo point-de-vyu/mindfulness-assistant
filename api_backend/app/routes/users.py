@@ -44,7 +44,8 @@ def add_new_user(user: User) -> str:
 
 @router.get(
     "/users/",
-    summary="Get users by:"
+    summary="Get user(s)",
+    description="Get user(s) by:"
             "\n- any parameter"
             "\n- a combo of parameters"
             "\n- no parameters: simply all users"
