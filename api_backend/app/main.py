@@ -1,12 +1,15 @@
 from fastapi import FastAPI
 import uvicorn
 from api_backend.app.routes import users
+from api_backend.app.routes import sos_rituals
 from fastapi.responses import HTMLResponse
 app = FastAPI(title="assistant_backend_api")
 
 app.include_router(users.router)
+app.include_router(sos_rituals.router)
 
-#TODO figure out future versioning + couple of routers
+
+# TODO figure out future versioning
 # TODO will have to add CORS https://fastapi.tiangolo.com/tutorial/cors/
 @app.get(
     "/",
