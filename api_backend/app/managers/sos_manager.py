@@ -34,9 +34,81 @@ class SosSelfHelpManager():
         results = [row._asdict()["name"] for row in rows]
         return results
 
-    def get_default_rituals(self) -> List[SosRitual]:
-        query = sqlalchemy.text("SELECT * FROM get_default_sos_rituals()")
-        executed_q = self.sql_connection.execute(query)
-        rows = executed_q.fetchall()
+    def get_default_rituals(
+            self,
+            category_name: str | None = None,
+            situation_name: str | None = None
+    ) -> List[SosRitual]:
+        category_id = self._get_category_id(category_name) if category_name else None
+        situation_id = self._get_situation_id(situation_name) if situation_name else None
+
+        query = sqlalchemy.select('*').select_from(sqlalchemy.func.get_default_sos_rituals(category_id, situation_id))
+        executed_query = self.sql_connection.execute(query)
+        rows = executed_query.fetchall()
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
+
+    def get_user_rituals(
+            self,
+            user_id: int,
+            category_name: str | None = None,
+            situation_name: str | None = None
+    ) -> List[SosRitual]:
+        category_id = self._get_category_id(category_name) if category_name else None
+        situation_id = self._get_situation_id(situation_name) if situation_name else None
+
+        query = sqlalchemy.select('*').select_from(sqlalchemy.func.get_user_sos_rituals(user_id, category_id, situation_id))
+        executed_query = self.sql_connection.execute(query)
+        rows = executed_query.fetchall()
+        result_dicts = [SosRitual(**row._asdict()) for row in rows]
+        return result_dicts
+
+    def add_custom_ritual(self, user_id: int, custom_ritual: SosRitual) -> int:
+        category_id = self._get_category_id(custom_ritual.category)
+        situation_id = self._get_situation_id(custom_ritual.situation)
+        result = self.sql_connection.execute(
+            sqlalchemy.func.add_custom_sos_ritual(
+                user_id,
+                category_id,
+                situation_id,
+                custom_ritual.title,
+                custom_ritual.description,
+                custom_ritual.url,
+                custom_ritual.tags
+            )
+        )
+        # LESSON_LEARNT with connections you always have to commit. And with engine?
+        # TODO learn engine VS session VS connection
+        self.sql_connection.commit()
+        rows = result.fetchmany()
+        if not rows:
+            raise RuntimeError("smth went wrong")
+        return int(rows[0][0])
+
+    def _get_category_id(self, category_name: str):
+        result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
+        rows = result.fetchmany()
+        if len(rows) > 1:
+            raise RuntimeError(f"found {len(rows)} rows")
+        # TODO треш, что с этим делать?
+        """
+        [
+            {
+                "funct_name_1": result
+            }
+        ]
+        """
+        result = list(rows[0]._asdict().values())[0]
+        if not result:
+            raise ValueError(f"{category_name=} doesn't exist")
+        return result
+
+    def _get_situation_id(self, situation_name: str) -> int:
+        result = self.sql_connection.execute(sqlalchemy.func.get_situation_id_from_name(situation_name))
+        rows = result.fetchmany()
+        if len(rows) > 1:
+            raise RuntimeError(f"found {len(rows)} rows")
+        result = list(rows[0]._asdict().values())[0]
+        if not result:
+            raise ValueError(f"{situation_name=} doesn't exist")
+        return result

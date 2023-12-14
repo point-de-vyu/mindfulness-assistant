@@ -15,7 +15,7 @@ class SosRitual(BaseModel):
     tags: List[str] | None = None
 
 
-class SosTable(Enum):
+class SosTable(str, Enum):
     DEFAULT_IDS = "sos_rituals_default_ids"
     RITUALS = "sos_rituals"
     CATEGORIES = "sos_categories"
