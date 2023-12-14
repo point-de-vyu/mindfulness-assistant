@@ -81,16 +81,17 @@ class SosSelfHelpManager():
         # TODO learn engine VS session VS connection
         self.sql_connection.commit()
         rows = result.fetchmany()
-        if not rows:
+        result = rows[0][0]
+        if not result:
             raise RuntimeError("smth went wrong")
-        return int(rows[0][0])
+        return result
 
     def _get_category_id(self, category_name: str):
         result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
         rows = result.fetchmany()
         if len(rows) > 1:
             raise RuntimeError(f"found {len(rows)} rows")
-        # TODO треш, что с этим делать?
+        # TODO треш, что с этим делать? это rows[0]._asdict()
         """
         [
             {
@@ -98,7 +99,8 @@ class SosSelfHelpManager():
             }
         ]
         """
-        result = list(rows[0]._asdict().values())[0]
+        result = rows[0][0]
+        # result = list(rows[0]._asdict().values())[0]
         if not result:
             raise ValueError(f"{category_name=} doesn't exist")
         return result
@@ -108,7 +110,8 @@ class SosSelfHelpManager():
         rows = result.fetchmany()
         if len(rows) > 1:
             raise RuntimeError(f"found {len(rows)} rows")
-        result = list(rows[0]._asdict().values())[0]
+        result = rows[0][0]
+        # result = list(rows[0]._asdict().values())[0]
         if not result:
             raise ValueError(f"{situation_name=} doesn't exist")
         return result
