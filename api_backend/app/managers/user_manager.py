@@ -49,15 +49,15 @@ class UserManager:
     ) -> List[User]:
         def find_not_null_params() -> Dict[str, str | int]:
             column_to_val = {}
-            if id is not None:
+            if id:
                 column_to_val["id"] = id
-            if username is not None:
+            if username:
                 column_to_val["username"] = username
-            if first_name is not None:
+            if first_name:
                 column_to_val["first_name"] = first_name
-            if last_name is not None:
+            if last_name:
                 column_to_val["last_name"] = last_name
-            if date_registered is not None:
+            if date_registered:
                 column_to_val["date_registered"] = date_registered
             return column_to_val
 
