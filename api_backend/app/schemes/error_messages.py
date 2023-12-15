@@ -7,6 +7,8 @@ class ErrorMsg(str, Enum):
     SOS_SITUATION_NOT_FOUND = "No such situation found, check name for typos"
     SOS_DEFAULT_RITUAL_NOT_FOUND = "No such default sos ritual available"
 
+    ACTION_FAILED = "Failed to perform action (insert or delete)"
+
     ROWS_MORE_THAN_ONE = "Found > 1 rows in DB when it should be 1"
     FAILED_DB_RESULT = "DB did not return a result"
 
