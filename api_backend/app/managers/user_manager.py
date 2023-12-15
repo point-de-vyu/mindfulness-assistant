@@ -1,6 +1,7 @@
 import sqlalchemy
 from sqlalchemy import func
 from api_backend.app.schemes.user import User
+from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.app.utils import get_postgres_engine
 import logging
 from typing import Dict, List
@@ -27,17 +28,23 @@ class UserManager:
         )
         executed_query = self.sql_connection.execute(query)
         self.sql_connection.commit()
-        return executed_query.inserted_primary_key
+        inserted_pkey = executed_query.inserted_primary_key
+        if not inserted_pkey:
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+        return inserted_pkey
 
-    # def get_user_by_username(self, username: str):
-    #     query = sqlalchemy.select(self.users_table).where(self.users_table.c.username == username)
-    #     executed_query = self.sql_connection.execute(query)
-    #     rows = executed_query.fetchmany()
-    #     if len(rows) > 1:
-    #         raise RuntimeError(f"found {len(rows)} rows")
-    #     # LESSON_LEARNT: trying to return row objects causes errors with fastapi decoder. Using _asdict() to get dict
-    #     result_dicts = [row._asdict() for row in rows]
-    #     return result_dicts
+    def get_user_by_username(self, username: str):
+        query = sqlalchemy.select(self.users_table).where(self.users_table.c.username == username)
+        executed_query = self.sql_connection.execute(query)
+
+        rows = executed_query.fetchmany()
+        if not rows:
+            raise ValueError(ErrorMsg.USER_NOT_FOUND_404)
+        if len(rows) > 1:
+            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE_500)
+        # LESSON_LEARNT: trying to return row objects causes errors with fastapi decoder. Using _asdict() to get dict
+        result = [User(**row._asdict()) for row in rows]
+        return result
 
     def get_users(
             self,

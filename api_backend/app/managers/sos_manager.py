@@ -2,9 +2,10 @@ import sqlalchemy
 from sqlalchemy import func
 from api_backend.app.schemes.sos_rituals import SosRitual
 from api_backend.app.schemes.sos_rituals import SosTable
+from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.app.utils import get_postgres_engine
 import logging
-from typing import Dict, List
+from typing import List
 
 
 class SosSelfHelpManager():
@@ -21,6 +22,8 @@ class SosSelfHelpManager():
         query = sqlalchemy.select(table.c.name)
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
+        if not rows:
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
         # TODO table schema?
         results = [row._asdict()["name"] for row in rows]
         return results
@@ -30,6 +33,8 @@ class SosSelfHelpManager():
         query = sqlalchemy.select(table.c.name)
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
+        if not rows:
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
         # TODO table schema?
         results = [row._asdict()["name"] for row in rows]
         return results
@@ -45,6 +50,8 @@ class SosSelfHelpManager():
         query = sqlalchemy.select('*').select_from(sqlalchemy.func.get_default_sos_rituals(category_id, situation_id))
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
+        if not rows:
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
@@ -83,14 +90,14 @@ class SosSelfHelpManager():
         rows = result.fetchmany()
         result = rows[0][0]
         if not result:
-            raise RuntimeError("smth went wrong")
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
         return result
 
-    def _get_category_id(self, category_name: str):
+    def _get_category_id(self, category_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
         rows = result.fetchmany()
         if len(rows) > 1:
-            raise RuntimeError(f"found {len(rows)} rows")
+            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE_500)
         # TODO треш, что с этим делать? это rows[0]._asdict()
         """
         [
@@ -102,16 +109,42 @@ class SosSelfHelpManager():
         result = rows[0][0]
         # result = list(rows[0]._asdict().values())[0]
         if not result:
-            raise ValueError(f"{category_name=} doesn't exist")
+            raise ValueError(ErrorMsg.SOS_CATEGORY_NOT_FOUND_404)
         return result
 
     def _get_situation_id(self, situation_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_situation_id_from_name(situation_name))
         rows = result.fetchmany()
         if len(rows) > 1:
-            raise RuntimeError(f"found {len(rows)} rows")
+            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE_500)
         result = rows[0][0]
         # result = list(rows[0]._asdict().values())[0]
         if not result:
-            raise ValueError(f"{situation_name=} doesn't exist")
+            raise ValueError(ErrorMsg.SOS_SITUATION_NOT_FOUND_404)
         return result
+
+    def _is_existing_default_ritual_id(self, ritual_id: int) -> bool:
+        table = sqlalchemy.Table(SosTable.DEFAULT_IDS, self.metadata, autoload_with=self.sql_connection)
+        query = sqlalchemy.select(table).filter(table.c.id == ritual_id)
+        executed_query = self.sql_connection.execute(query)
+        rows = executed_query.fetchall()
+        if rows:
+            return True
+        return False
+
+    def add_default_ritual_for_user(self, user_id: int, ritual_id: int):
+        if not self._is_existing_default_ritual_id(ritual_id):
+            raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_NOT_FOUND_404)
+        table = sqlalchemy.Table(SosTable.USER_RITUAL, self.metadata, autoload_with=self.sql_connection)
+
+        query = sqlalchemy.insert(table).values(
+            user_id=user_id,
+            ritual_id=ritual_id
+        )
+        executed_query = self.sql_connection.execute(query)
+        inserted_pkey = executed_query.inserted_primary_key
+        self.sql_connection.commit()
+        # TODO  sqlalchemy.exc.IntegrityError:
+        if not inserted_pkey:
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+        return inserted_pkey
