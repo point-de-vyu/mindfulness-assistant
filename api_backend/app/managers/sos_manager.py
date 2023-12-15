@@ -23,7 +23,7 @@ class SosSelfHelpManager():
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
         if not rows:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         # TODO table schema?
         results = [row._asdict()["name"] for row in rows]
         return results
@@ -34,7 +34,7 @@ class SosSelfHelpManager():
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
         if not rows:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         # TODO table schema?
         results = [row._asdict()["name"] for row in rows]
         return results
@@ -51,7 +51,7 @@ class SosSelfHelpManager():
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
         if not rows:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
@@ -90,14 +90,14 @@ class SosSelfHelpManager():
         rows = result.fetchmany()
         result = rows[0][0]
         if not result:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         return result
 
     def _get_category_id(self, category_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
         rows = result.fetchmany()
         if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE_500)
+            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
         # TODO треш, что с этим делать? это rows[0]._asdict()
         """
         [
@@ -109,18 +109,18 @@ class SosSelfHelpManager():
         result = rows[0][0]
         # result = list(rows[0]._asdict().values())[0]
         if not result:
-            raise ValueError(ErrorMsg.SOS_CATEGORY_NOT_FOUND_404)
+            raise ValueError(ErrorMsg.SOS_CATEGORY_NOT_FOUND)
         return result
 
     def _get_situation_id(self, situation_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_situation_id_from_name(situation_name))
         rows = result.fetchmany()
         if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE_500)
+            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
         result = rows[0][0]
         # result = list(rows[0]._asdict().values())[0]
         if not result:
-            raise ValueError(ErrorMsg.SOS_SITUATION_NOT_FOUND_404)
+            raise ValueError(ErrorMsg.SOS_SITUATION_NOT_FOUND)
         return result
 
     def _is_existing_default_ritual_id(self, ritual_id: int) -> bool:
@@ -134,7 +134,7 @@ class SosSelfHelpManager():
 
     def add_default_ritual_for_user(self, user_id: int, ritual_id: int):
         if not self._is_existing_default_ritual_id(ritual_id):
-            raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_NOT_FOUND_404)
+            raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_NOT_FOUND)
         table = sqlalchemy.Table(SosTable.USER_RITUAL, self.metadata, autoload_with=self.sql_connection)
 
         query = sqlalchemy.insert(table).values(
@@ -146,5 +146,5 @@ class SosSelfHelpManager():
         self.sql_connection.commit()
         # TODO  sqlalchemy.exc.IntegrityError:
         if not inserted_pkey:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         return inserted_pkey

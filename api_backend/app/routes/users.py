@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from fastapi import status
 from typing import List
 from api_backend.app.schemes.user import User
+from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.app.managers.user_manager import UserManager
 
 
@@ -55,12 +56,12 @@ def get_users(
 )
 def delete_user(username: str):
     user_mng = UserManager()
-    try:
-        user = user_mng.get_user_by_username(username)
-    except ValueError as val_err:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(val_err))
-    except RuntimeError as runt_err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
+    # мб фиг с 500? все равно клиент их получит, а так можно без трай, если пустой лист юзера - шлем ошибкку:
+    user = user_mng.get_user_by_username(username)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorMsg.USER_NOT_FOUND)
+    # except RuntimeError as runt_err:
+    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     user_id = user[0].id
     user_deleted = user_mng.delete_user(user_id)
     if not user_deleted:

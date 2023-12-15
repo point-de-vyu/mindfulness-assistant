@@ -31,21 +31,32 @@ class UserManager:
         inserted_pkey = executed_query.inserted_primary_key
         # TODO мб как и в delete возвращать bool. Как-то унифицировать - после логгера.
         if not inserted_pkey:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         return inserted_pkey
 
-    def get_user_by_username(self, username: str):
+    def get_user_by_username(self, username: str) -> User | None:
         query = sqlalchemy.select(self.users_table).where(self.users_table.c.username == username)
         executed_query = self.sql_connection.execute(query)
-
         rows = executed_query.fetchmany()
-        if not rows:
-            raise ValueError(ErrorMsg.USER_NOT_FOUND_404)
         if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE_500)
+            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
+
+        if not rows:
+            return None
         # LESSON_LEARNT: trying to return row objects causes errors with fastapi decoder. Using _asdict() to get dict
-        result = [User(**row._asdict()) for row in rows]
-        return result
+        return User(**rows[0]._asdict())
+
+    def get_user_by_id(self, user_id: int) -> User | None:
+        query = sqlalchemy.select(self.users_table).where(self.users_table.c.id == user_id)
+        executed_query = self.sql_connection.execute(query)
+        rows = executed_query.fetchmany()
+        if len(rows) > 1:
+            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
+
+        if not rows:
+            return None
+        return User(**rows[0]._asdict())
+
 
     def get_users(
             self,
