@@ -114,8 +114,7 @@ def add_ritual_for_user(username: str, custom_ritual: SosRitual):
 
 @router.post(
     "/default_sos_ritual/{username}/",
-    summary="Add a default ritual to user's own",
-    description="-"
+    summary="Add a default ritual to user's own"
 )
 def add_default_ritual_for_user(username: str, default_ritual_id: int):
     engine = get_postgres_engine()
@@ -136,6 +135,13 @@ def add_default_ritual_for_user(username: str, default_ritual_id: int):
 
     return f"created entry for {pkey}"
 
+
+@router.delete(
+    "/sos_rituals/{username}/",
+    summary="Delete a chosen ritual from a user's data"
+)
+def remove_ritual_for_user(username: str, ritual_id: int):
+    pass
 
 # TODO REMOVE AFTER TESTING
 @router.get("/cat_by_name/{name}")
