@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
+from fastapi import status
 from typing import List
 from api_backend.app.schemes.sos_rituals import SosRitual
 from api_backend.app.managers.user_manager import UserManager
@@ -7,7 +8,7 @@ from api_backend.app.utils import get_postgres_engine
 from api_backend.app.managers.sos_manager import SosSelfHelpManager
 
 
-router = APIRouter()
+router = APIRouter(tags=["sos_rituals"])
 
 
 # TODO может, возвращать не лист строк, а лист диктов {id: name}? чтобы посылать id
@@ -20,7 +21,7 @@ def get_categories() -> List[str]:
         mng = SosSelfHelpManager()
         result = mng.get_available_categories()
     except RuntimeError as runt_err:
-        raise HTTPException(status_code=500, detail=str(runt_err))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     return result
 
 
@@ -34,7 +35,7 @@ def get_situations() -> List[str]:
         mng = SosSelfHelpManager()
         result = mng.get_available_situations()
     except RuntimeError as runt_err:
-        raise HTTPException(status_code=500, detail=str(runt_err))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     return result
 
 
@@ -74,15 +75,15 @@ def get_user_rituals(username: str, category: str | None = None, situation: str 
         user_mng = UserManager(sql_connection=db_connection)
         user = user_mng.get_user_by_username(username)
     except ValueError as val_err:
-        raise HTTPException(status_code=404, detail=str(val_err))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(val_err))
     except RuntimeError as runt_err:
-        raise HTTPException(status_code=500, detail=str(runt_err))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     try:
         user_id = user[0].id
         sos_mng = SosSelfHelpManager(sql_connection=db_connection)
         user_rituals = sos_mng.get_user_rituals(user_id, category_name=category, situation_name=situation)
     except ValueError as val_err:
-        raise HTTPException(status_code=404, detail=str(val_err))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(val_err))
     return user_rituals
 
 
@@ -98,15 +99,15 @@ def add_ritual_for_user(username: str, custom_ritual: SosRitual):
         user_mng = UserManager(sql_connection=db_connection)
         user = user_mng.get_user_by_username(username)
     except ValueError as val_err:
-        raise HTTPException(status_code=404, detail=str(val_err))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(val_err))
     except RuntimeError as runt_err:
-        raise HTTPException(status_code=500, detail=str(runt_err))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     user_id = user[0].id
     sos_mng = SosSelfHelpManager(sql_connection=db_connection)
     try:
         created_ritual_id = sos_mng.add_custom_ritual(user_id, custom_ritual)
     except ValueError as val_err:
-        raise HTTPException(status_code=404, detail=str(val_err))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(val_err))
 
     return f"{created_ritual_id=}"
 
@@ -123,15 +124,15 @@ def add_default_ritual_for_user(username: str, default_ritual_id: int):
         user_mng = UserManager(sql_connection=db_connection)
         user = user_mng.get_user_by_username(username)
     except ValueError as val_err:
-        raise HTTPException(status_code=404, detail=str(val_err))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(val_err))
     except RuntimeError as runt_err:
-        raise HTTPException(status_code=500, detail=str(runt_err))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     user_id = user[0].id
     sos_mng = SosSelfHelpManager(sql_connection=db_connection)
     try:
         pkey = sos_mng.add_default_ritual_for_user(user_id, default_ritual_id)
     except ValueError as err:
-        raise HTTPException(status_code=404, detail=str(err))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
 
     return f"created entry for {pkey}"
 
