@@ -78,3 +78,16 @@ class UserManager:
         rows = executed_query.fetchall()
         result_dicts = [User(**row._asdict()) for row in rows]
         return result_dicts
+
+    def delete_user(self, user_id: int) -> bool:
+        # TODO: все удаление каскадируется, но не удалятся кастомные штуки, созданные юзером.
+        #  Плюс далее будут еще их штуки: надо кастом функцию написать
+        query = sqlalchemy.delete(self.users_table).where(self.users_table.c.id == user_id)
+        executed_query = self.sql_connection.execute(query)
+        self.sql_connection.commit()
+        rowcount = executed_query.rowcount
+        if rowcount != 1:
+            return False
+        return True
+
+

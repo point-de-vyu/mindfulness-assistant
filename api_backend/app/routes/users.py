@@ -22,6 +22,7 @@ def add_new_user(user: User) -> str:
     return f"created user with id={result}"
 
 
+# TODO if this is open to all, client can get data on users other than theirs. Either stricter authorization or remove
 @router.get(
     "/users/",
     summary="Get user(s)",
@@ -46,3 +47,22 @@ def get_users(
         date_registered=date_registered
     )
     return users
+
+
+@router.delete(
+    "/users/",
+    summary="Delete user and all their data"
+)
+def delete_user(username: str):
+    user_mng = UserManager()
+    try:
+        user = user_mng.get_user_by_username(username)
+    except ValueError as val_err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(val_err))
+    except RuntimeError as runt_err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
+    user_id = user[0].id
+    user_deleted = user_mng.delete_user(user_id)
+    if not user_deleted:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete?")
+    return f"deleted user with id={user_id} and all their data"
