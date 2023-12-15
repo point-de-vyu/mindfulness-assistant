@@ -29,6 +29,7 @@ class UserManager:
         executed_query = self.sql_connection.execute(query)
         self.sql_connection.commit()
         inserted_pkey = executed_query.inserted_primary_key
+        # TODO мб как и в delete возвращать bool. Как-то унифицировать - после логгера.
         if not inserted_pkey:
             raise RuntimeError(ErrorMsg.FAILED_DB_RESULT_500)
         return inserted_pkey
