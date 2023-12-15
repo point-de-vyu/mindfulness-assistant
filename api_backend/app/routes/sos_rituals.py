@@ -17,11 +17,8 @@ router = APIRouter(tags=["sos_rituals"])
     description="Get categories of default rituals, e.g. Meditation"
 )
 def get_categories() -> List[str]:
-    try:
-        mng = SosSelfHelpManager()
-        result = mng.get_available_categories()
-    except RuntimeError as runt_err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
+    mng = SosSelfHelpManager()
+    result = mng.get_available_categories()
     return result
 
 
