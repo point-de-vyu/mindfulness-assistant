@@ -5,7 +5,7 @@ from typing import List
 from api_backend.app.schemes.user import User
 from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.app.managers.user_manager import UserManager
-
+from api_backend.app.utils import raise_404_error
 
 router = APIRouter(tags=["users"])
 
@@ -23,31 +23,28 @@ def add_new_user(user: User) -> str:
     return f"created user with id={result}"
 
 
-# TODO if this is open to all, client can get data on users other than theirs. Either stricter authorization or remove
 @router.get(
-    "/users/",
-    summary="Get user(s)",
-    description="Get user(s) by:"
-            "\n- any parameter"
-            "\n- a combo of parameters"
-            "\n- no parameters: simply all users"
+    "/user_by_username/{username}",
+    summary="Get user by their unique username"
 )
-def get_users(
-    id: int | None = None,
-    username: str | None = None,
-    first_name: str | None = None,
-    last_name: str | None = None,
-    date_registered: str | None = None
-) -> List[User]:
+def get_user_by_username(username: str) -> User:
     user_mng = UserManager()
-    users = user_mng.get_users(
-        id=id,
-        username=username,
-        first_name=first_name,
-        last_name=last_name,
-        date_registered=date_registered
-    )
-    return users
+    user = user_mng.get_by_username(username)
+    if not user:
+        raise_404_error(ErrorMsg.USER_NOT_FOUND)
+    return user
+
+
+@router.get(
+    "/user_by_id/{id}",
+    summary="Get user by their unique id"
+)
+def get_user_by_username(id: int) -> User:
+    user_mng = UserManager()
+    user = user_mng.get_by_id(id)
+    if not user:
+        raise_404_error(ErrorMsg.USER_NOT_FOUND)
+    return user
 
 
 @router.delete(
@@ -57,9 +54,9 @@ def get_users(
 def delete_user(username: str):
     user_mng = UserManager()
     # мб фиг с 500? все равно клиент их получит, а так можно без трай, если пустой лист юзера - шлем ошибкку:
-    user = user_mng.get_user_by_username(username)
+    user = user_mng.get_by_username(username)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorMsg.USER_NOT_FOUND)
+        raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
     # except RuntimeError as runt_err:
     #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     user_id = user[0].id

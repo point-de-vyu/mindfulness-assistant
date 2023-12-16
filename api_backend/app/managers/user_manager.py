@@ -34,10 +34,32 @@ class UserManager:
             raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         return inserted_pkey
 
-    def get_user_by_username(self, username: str) -> User | None:
-        query = sqlalchemy.select(self.users_table).where(self.users_table.c.username == username)
+    def get_by_id(self, id: int) -> User | None:
+        return self._get_user(id=id)
+
+    def get_by_username(self, username: str) -> User | None:
+        return self._get_user(username=username)
+
+    def _get_user(
+            self,
+            id: int | None = None,
+            username: str | None = None
+    ) -> User | None:
+        def find_not_null_params() -> Dict[str, str | int]:
+            column_to_val = {}
+            # priority to id
+            if username:
+                column_to_val["username"] = username
+            elif id:
+                column_to_val["id"] = id
+            return column_to_val
+
+        params = find_not_null_params()
+        if not params:
+            return None
+        query = sqlalchemy.select(self.users_table).filter_by(**params)
         executed_query = self.sql_connection.execute(query)
-        rows = executed_query.fetchmany()
+        rows = executed_query.fetchall()
         if len(rows) > 1:
             raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
 
@@ -45,51 +67,6 @@ class UserManager:
             return None
         # LESSON_LEARNT: trying to return row objects causes errors with fastapi decoder. Using _asdict() to get dict
         return User(**rows[0]._asdict())
-
-    def get_user_by_id(self, user_id: int) -> User | None:
-        query = sqlalchemy.select(self.users_table).where(self.users_table.c.id == user_id)
-        executed_query = self.sql_connection.execute(query)
-        rows = executed_query.fetchmany()
-        if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
-
-        if not rows:
-            return None
-        return User(**rows[0]._asdict())
-
-
-    def get_users(
-            self,
-            id: int | None = None,
-            username: str | None = None,
-            first_name: str | None = None,
-            last_name: str | None = None,
-            date_registered: str | None = None
-    ) -> List[User]:
-        def find_not_null_params() -> Dict[str, str | int]:
-            column_to_val = {}
-            if id:
-                column_to_val["id"] = id
-            if username:
-                column_to_val["username"] = username
-            if first_name:
-                column_to_val["first_name"] = first_name
-            if last_name:
-                column_to_val["last_name"] = last_name
-            if date_registered:
-                column_to_val["date_registered"] = date_registered
-            return column_to_val
-
-        params = find_not_null_params()
-        # logging.log(level=0, msg=params)
-        query = sqlalchemy.select(self.users_table)
-        if params:
-            query = query.filter_by(**params)
-        executed_query = self.sql_connection.execute(query)
-        # will need caution with fetchall for q with no params if loads of users
-        rows = executed_query.fetchall()
-        result_dicts = [User(**row._asdict()) for row in rows]
-        return result_dicts
 
     def delete_user(self, user_id: int) -> bool:
         # TODO: все удаление каскадируется, но не удалятся кастомные штуки, созданные юзером.

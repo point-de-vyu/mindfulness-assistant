@@ -1,5 +1,8 @@
 import sqlalchemy
 
+from fastapi import HTTPException
+from fastapi import status
+
 
 def get_db_connection_parameters():
     # LESSON_LEARNT: use service name from compose to access other services
@@ -21,3 +24,17 @@ def get_postgres_engine(db_name: str | None = None, is_autocommit: bool = False)
     if is_autocommit:
         engine = engine.execution_options(autocommit=True)
     return engine
+
+
+def raise_404_error(msg: str ="Not found") -> None:
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=msg
+    )
+
+
+def raise_400_error(msg: str ="Invalid parameter") -> None:
+    raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=msg
+        )

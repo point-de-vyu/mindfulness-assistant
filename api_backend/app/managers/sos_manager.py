@@ -109,7 +109,7 @@ class SosSelfHelpManager():
         result = rows[0][0]
         # result = list(rows[0]._asdict().values())[0]
         if not result:
-            raise ValueError(ErrorMsg.SOS_CATEGORY_NOT_FOUND)
+            raise ValueError(ErrorMsg.SOS_CATEGORY_INVALID)
         return result
 
     def _get_situation_id(self, situation_name: str) -> int:
@@ -134,7 +134,7 @@ class SosSelfHelpManager():
 
     def add_default_ritual_for_user(self, user_id: int, ritual_id: int):
         if not self._is_existing_default_ritual_id(ritual_id):
-            raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_NOT_FOUND)
+            raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_ID_INVALID)
         table = sqlalchemy.Table(SosTable.USER_RITUAL, self.metadata, autoload_with=self.sql_connection)
 
         query = sqlalchemy.insert(table).values(
@@ -148,3 +148,12 @@ class SosSelfHelpManager():
         if not inserted_pkey:
             raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         return inserted_pkey
+
+    def remove_ritual_from_user_data(self, user_id: int, ritual_id: int):
+        query = sqlalchemy.func.delete_ritual_from_user_data(user_id, ritual_id)
+        executed_query = self.sql_connection.execute(query)
+        self.sql_connection.commit()
+        result = executed_query.fetchone()
+        if not result:
+            return False
+        return True

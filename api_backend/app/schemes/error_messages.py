@@ -3,9 +3,10 @@ from enum import Enum
 
 class ErrorMsg(str, Enum):
     USER_NOT_FOUND = "No such user found"
-    SOS_CATEGORY_NOT_FOUND = "No such category found, check name for typos"
-    SOS_SITUATION_NOT_FOUND = "No such situation found, check name for typos"
-    SOS_DEFAULT_RITUAL_NOT_FOUND = "No such default sos ritual available"
+
+    SOS_CATEGORY_INVALID = "Category does not exist, check name for typos"
+    SOS_SITUATION_INVALID = "Situation does not exist, check name for typos"
+    SOS_DEFAULT_RITUAL_ID_INVALID = "No default ritual with this ID exists"
 
     ACTION_FAILED = "Failed to perform action (insert or delete)"
 
