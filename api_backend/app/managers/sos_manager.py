@@ -10,11 +10,10 @@ from typing import List
 
 class SosSelfHelpManager():
 
-    def __init__(self, sql_connection: sqlalchemy.Connection | None = None) -> None:
-        if not sql_connection:
+    def __init__(self, engine: sqlalchemy.Engine | None = None) -> None:
+        if not engine:
             engine = get_postgres_engine()
-            sql_connection = engine.connect()
-        self.sql_connection = sql_connection
+        self.sql_connection = engine.connect()
         self.metadata = sqlalchemy.MetaData()
 
     def get_available_categories(self) -> List[str]:

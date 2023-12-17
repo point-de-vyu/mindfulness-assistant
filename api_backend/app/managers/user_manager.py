@@ -10,11 +10,10 @@ from typing import Dict, List
 class UserManager:
     TABLE_NAME = "users"
 
-    def __init__(self, sql_connection: sqlalchemy.Connection | None = None):
-        if not sql_connection:
+    def __init__(self, engine: sqlalchemy.Engine | None = None):
+        if not engine:
             engine = get_postgres_engine()
-            sql_connection = engine.connect()
-        self.sql_connection = sql_connection
+        self.sql_connection = engine.connect()
         metadata = sqlalchemy.MetaData()
         self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
 

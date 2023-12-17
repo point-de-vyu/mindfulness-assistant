@@ -63,14 +63,13 @@ def get_default_sos_rituals(category: str | None = None, situation: str | None =
 )
 def get_user_rituals(username: str, category: str | None = None, situation: str | None = None) -> List[SosRitual]:
     engine = get_postgres_engine()
-    db_connection = engine.connect()
-    user_mng = UserManager(sql_connection=db_connection)
+    user_mng = UserManager(engine=engine)
     user = user_mng.get_by_username(username)
     if not user:
         raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
     try:
-        user_id = user[0].id
-        sos_mng = SosSelfHelpManager(sql_connection=db_connection)
+        user_id = user.id
+        sos_mng = SosSelfHelpManager(engine=engine)
         user_rituals = sos_mng.get_user_rituals(user_id, category_name=category, situation_name=situation)
     except ValueError as val_err:
         raise_400_error(msg=str(val_err))
@@ -83,13 +82,12 @@ def get_user_rituals(username: str, category: str | None = None, situation: str 
 )
 def add_ritual_for_user(username: str, custom_ritual: SosRitual):
     engine = get_postgres_engine()
-    db_connection = engine.connect()
-    user_mng = UserManager(sql_connection=db_connection)
+    user_mng = UserManager(engine=engine)
     user = user_mng.get_by_username(username)
     if not user:
         raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
-    user_id = user[0].id
-    sos_mng = SosSelfHelpManager(sql_connection=db_connection)
+    user_id = user.id
+    sos_mng = SosSelfHelpManager(engine=engine)
     try:
         created_ritual_id = sos_mng.add_custom_ritual(user_id, custom_ritual)
     except ValueError as val_err:
@@ -104,13 +102,12 @@ def add_ritual_for_user(username: str, custom_ritual: SosRitual):
 )
 def add_default_ritual_for_user(username: str, default_ritual_id: int):
     engine = get_postgres_engine()
-    db_connection = engine.connect()
-    user_mng = UserManager(sql_connection=db_connection)
+    user_mng = UserManager(engine=engine)
     user = user_mng.get_by_username(username)
     if not user:
         raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
-    user_id = user[0].id
-    sos_mng = SosSelfHelpManager(sql_connection=db_connection)
+    user_id = user.id
+    sos_mng = SosSelfHelpManager(engine=engine)
     try:
         pkey = sos_mng.add_default_ritual_for_user(user_id, default_ritual_id)
     except ValueError as err:
@@ -125,13 +122,12 @@ def add_default_ritual_for_user(username: str, default_ritual_id: int):
 )
 def remove_ritual_for_user(username: str, ritual_id: int):
     engine = get_postgres_engine()
-    db_connection = engine.connect()
-    user_mng = UserManager(sql_connection=db_connection)
+    user_mng = UserManager(engine=engine)
     user = user_mng.get_by_username(username)
     if not user:
         raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
-    user_id = user[0].id
-    sos_mng = SosSelfHelpManager(sql_connection=db_connection)
+    user_id = user.id
+    sos_mng = SosSelfHelpManager(engine=engine)
     result = sos_mng.remove_ritual_from_user_data(user_id, ritual_id)
 
 

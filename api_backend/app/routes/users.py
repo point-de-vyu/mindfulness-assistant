@@ -59,7 +59,7 @@ def delete_user(username: str):
         raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
     # except RuntimeError as runt_err:
     #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
-    user_id = user[0].id
+    user_id = user.id
     user_deleted = user_mng.delete_user(user_id)
     if not user_deleted:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete?")
