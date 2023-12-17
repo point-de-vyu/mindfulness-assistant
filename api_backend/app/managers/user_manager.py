@@ -10,12 +10,17 @@ from typing import Dict, List
 class UserManager:
     TABLE_NAME = "users"
 
-    def __init__(self, engine: sqlalchemy.Engine | None = None):
+    def __init__(
+            self,
+            engine: sqlalchemy.Engine,
+            logger: logging.Logger
+    ):
         if not engine:
             engine = get_postgres_engine()
         self.sql_connection = engine.connect()
         metadata = sqlalchemy.MetaData()
         self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
+        self.logger = logger
 
     def add_new_user(self, user: User):
         query = sqlalchemy.insert(self.users_table).values(
@@ -30,7 +35,9 @@ class UserManager:
         inserted_pkey = executed_query.inserted_primary_key
         # TODO мб как и в delete возвращать bool. Как-то унифицировать - после логгера.
         if not inserted_pkey:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
+            msg = ErrorMsg.FAILED_DB_RESULT
+            self.logger.critical(f"{msg} adding new user")
+            raise RuntimeError(msg)
         return inserted_pkey
 
     def get_by_id(self, id: int) -> User | None:
@@ -60,7 +67,9 @@ class UserManager:
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
         if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
+            msg = ErrorMsg.ROWS_MORE_THAN_ONE
+            self.logger.critical(msg)
+            raise RuntimeError(msg)
 
         if not rows:
             return None
@@ -75,6 +84,7 @@ class UserManager:
         self.sql_connection.commit()
         rowcount = executed_query.rowcount
         if rowcount != 1:
+            self.logger.critical(f"Failed to delete user with {user_id}")
             return False
         return True
 

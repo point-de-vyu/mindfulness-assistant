@@ -8,13 +8,18 @@ import logging
 from typing import List
 
 
-class SosSelfHelpManager():
+class SosSelfHelpManager:
 
-    def __init__(self, engine: sqlalchemy.Engine | None = None) -> None:
+    def __init__(
+            self,
+            engine: sqlalchemy.Engine,
+            logger: logging.Logger
+    ) -> None:
         if not engine:
             engine = get_postgres_engine()
         self.sql_connection = engine.connect()
         self.metadata = sqlalchemy.MetaData()
+        self.logger = logger
 
     def get_available_categories(self) -> List[str]:
         table = sqlalchemy.Table(SosTable.CATEGORIES, self.metadata, autoload_with=self.sql_connection)
@@ -89,14 +94,18 @@ class SosSelfHelpManager():
         rows = result.fetchmany()
         result = rows[0][0]
         if not result:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
+            msg = ErrorMsg.FAILED_DB_RESULT
+            self.logger.critical(msg)
+            raise RuntimeError(msg)
         return result
 
     def _get_category_id(self, category_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
         rows = result.fetchmany()
         if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
+            msg = ErrorMsg.ROWS_MORE_THAN_ONE
+            self.logger.critical(msg)
+            raise RuntimeError(msg)
         # TODO треш, что с этим делать? это rows[0]._asdict()
         """
         [
@@ -106,7 +115,6 @@ class SosSelfHelpManager():
         ]
         """
         result = rows[0][0]
-        # result = list(rows[0]._asdict().values())[0]
         if not result:
             raise ValueError(ErrorMsg.SOS_CATEGORY_INVALID)
         return result
@@ -117,9 +125,8 @@ class SosSelfHelpManager():
         if len(rows) > 1:
             raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
         result = rows[0][0]
-        # result = list(rows[0]._asdict().values())[0]
         if not result:
-            raise ValueError(ErrorMsg.SOS_SITUATION_NOT_FOUND)
+            raise ValueError(ErrorMsg.SOS_SITUATION_INVALID)
         return result
 
     def _is_existing_default_ritual_id(self, ritual_id: int) -> bool:
@@ -131,7 +138,7 @@ class SosSelfHelpManager():
             return True
         return False
 
-    def add_default_ritual_for_user(self, user_id: int, ritual_id: int):
+    def add_default_ritual_for_user(self, user_id: int, ritual_id: int) -> None:
         if not self._is_existing_default_ritual_id(ritual_id):
             raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_ID_INVALID)
         table = sqlalchemy.Table(SosTable.USER_RITUAL, self.metadata, autoload_with=self.sql_connection)
@@ -145,14 +152,17 @@ class SosSelfHelpManager():
         self.sql_connection.commit()
         # TODO  sqlalchemy.exc.IntegrityError:
         if not inserted_pkey:
+            self.logger.critical(f"Failed to add {ritual_id=} for {user_id=}")
             raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
-        return inserted_pkey
+        self.logger.info(f"Added {ritual_id=} for {user_id=}")
 
-    def remove_ritual_from_user_data(self, user_id: int, ritual_id: int):
+    def remove_ritual_from_user_data(self, user_id: int, ritual_id: int) -> None:
         query = sqlalchemy.func.delete_ritual_from_user_data(user_id, ritual_id)
         executed_query = self.sql_connection.execute(query)
         self.sql_connection.commit()
         result = executed_query.fetchone()
         if not result:
-            return False
-        return True
+            self.logger.critical(f"Failed to delete {ritual_id=} for {user_id=}")
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
+        self.logger.info(f"Added {ritual_id=} for {user_id=}")
+
