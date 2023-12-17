@@ -7,7 +7,7 @@ from api_backend.app.logger import set_up_logger
 
 app = FastAPI(title="assistant_backend_api")
 
-logger = set_up_logger(set_up_stdout=True, set_up_file=True)
+logger = set_up_logger(set_up_stdout=True)
 
 app.include_router(users.router)
 app.include_router(sos_rituals.router)
