@@ -88,8 +88,6 @@ class SosSelfHelpManager:
                 custom_ritual.tags
             )
         )
-        # LESSON_LEARNT with connections you always have to commit. And with engine?
-        # TODO learn engine VS session VS connection
         self.sql_connection.commit()
         rows = result.fetchmany()
         result = rows[0][0]
