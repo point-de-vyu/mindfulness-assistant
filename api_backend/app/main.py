@@ -5,12 +5,12 @@ from api_backend.app.routes import sos_rituals
 from fastapi.responses import HTMLResponse
 from api_backend.app.logger import set_up_logger
 
-app = FastAPI(title="assistant_backend_api")
+app = FastAPI(title="Assistant API")
 
 logger = set_up_logger(set_up_stdout=True)
 
-app.include_router(users.router)
-app.include_router(sos_rituals.router)
+app.include_router(users.router, prefix="/v1")
+app.include_router(sos_rituals.router, prefix="/v1")
 
 
 # TODO figure out future versioning
