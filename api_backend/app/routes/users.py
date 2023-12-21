@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from fastapi import status
 from api_backend.app.logger import get_logger
 from api_backend.app.utils import get_postgres_engine
-from api_backend.app.schemes.user import User
+from api_backend.app.schemes.user import User, UserToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.app.managers.user_manager import UserManager
 from api_backend.app.utils import raise_404_error
@@ -17,7 +17,7 @@ user_mng = UserManager(engine=get_postgres_engine(), logger=logger)
     "/users/",
     summary="Add a new user"
 )
-def add_new_user(user: User) -> None:
+def add_new_user(user: UserToCreate) -> None:
     logger.info(f"Creating new user {user}")
     try:
         result = user_mng.add_new_user(user)

@@ -1,6 +1,6 @@
 import sqlalchemy
 from sqlalchemy import func
-from api_backend.app.schemes.user import User
+from api_backend.app.schemes.user import User, UserToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.app.utils import get_postgres_engine
 import logging
@@ -22,7 +22,7 @@ class UserManager:
         self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
         self.logger = logger
 
-    def add_new_user(self, user: User):
+    def add_new_user(self, user: UserToCreate):
         query = sqlalchemy.insert(self.users_table).values(
             id=func.generate_user_id(),
             username=user.username,

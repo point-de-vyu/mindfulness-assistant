@@ -3,9 +3,12 @@ from typing import Optional
 from datetime import date
 
 
-class User(BaseModel):
+class UserToCreate(BaseModel):
     first_name: str
     last_name: str
     username: str
-    id: Optional[int] = None
-    date_registered: Optional[str | date] = None
+
+
+class User(UserToCreate):
+    id: int
+    date_registered: str | date
