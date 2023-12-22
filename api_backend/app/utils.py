@@ -38,3 +38,9 @@ def raise_400_error(msg: str = "Invalid parameter") -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=msg
     )
+
+def raise_401_error(msg: str = "Invalid token") -> None:
+    raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=msg
+    )
