@@ -1,10 +1,9 @@
 import sqlalchemy
-from sqlalchemy import func
 from api_backend.app.schemes.user import User, UserToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
-from api_backend.app.utils import get_postgres_engine
+from api_backend.app import auth
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 
 class UserManager:
@@ -15,30 +14,26 @@ class UserManager:
             engine: sqlalchemy.Engine,
             logger: logging.Logger
     ):
-        if not engine:
-            engine = get_postgres_engine()
         self.sql_connection = engine.connect()
         metadata = sqlalchemy.MetaData()
         self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
         self.logger = logger
 
-    def add_new_user(self, user: UserToCreate):
-        query = sqlalchemy.insert(self.users_table).values(
-            id=func.generate_user_id(),
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            date_registered=sqlalchemy.sql.functions.now()
-        )
-        executed_query = self.sql_connection.execute(query)
+    def add_new_user(self, user: UserToCreate) -> Tuple[int, str]:
+        user_token = auth.generate_token()
+        executed_query = self.sql_connection.execute(sqlalchemy.func.add_new_user(
+            user.username,
+            user.first_name,
+            user.last_name,
+            user_token
+        ))
         self.sql_connection.commit()
-        inserted_pkey = executed_query.inserted_primary_key
-        # TODO мб как и в delete возвращать bool. Как-то унифицировать - после логгера.
-        if not inserted_pkey:
+        user_id = executed_query.scalar()
+        if not user_id:
             msg = ErrorMsg.FAILED_DB_RESULT
             self.logger.critical(f"{msg} adding new user")
             raise RuntimeError(msg)
-        return inserted_pkey
+        return (user_id, user_token)
 
     def get_by_id(self, id: int) -> User | None:
         return self._get_user(id=id)
@@ -87,5 +82,3 @@ class UserManager:
             self.logger.critical(f"Failed to delete user with {user_id}")
             return False
         return True
-
-

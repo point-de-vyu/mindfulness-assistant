@@ -1,9 +1,8 @@
 import sqlalchemy
-from sqlalchemy import func
 from api_backend.app.schemes.sos_rituals import SosRitual
+from api_backend.app.schemes.sos_rituals import SosRitualToCreate
 from api_backend.app.schemes.sos_rituals import SosTable
 from api_backend.app.schemes.error_messages import ErrorMsg
-from api_backend.app.utils import get_postgres_engine
 import logging
 from typing import List
 
@@ -15,8 +14,6 @@ class SosSelfHelpManager:
             engine: sqlalchemy.Engine,
             logger: logging.Logger
     ) -> None:
-        if not engine:
-            engine = get_postgres_engine()
         self.sql_connection = engine.connect()
         self.metadata = sqlalchemy.MetaData()
         self.logger = logger
@@ -74,7 +71,7 @@ class SosSelfHelpManager:
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
-    def add_custom_ritual(self, user_id: int, custom_ritual: SosRitual) -> int:
+    def add_custom_ritual(self, user_id: int, custom_ritual: SosRitualToCreate) -> int:
         category_id = self._get_category_id(custom_ritual.category)
         situation_id = self._get_situation_id(custom_ritual.situation)
         result = self.sql_connection.execute(

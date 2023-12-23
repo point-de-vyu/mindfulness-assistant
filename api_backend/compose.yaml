@@ -30,6 +30,8 @@ services:
   backend_api:
     build:
       context: .
+    env_file:
+      - .env
     secrets:
       - db-password
     ports:

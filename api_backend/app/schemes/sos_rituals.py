@@ -3,16 +3,27 @@ from pydantic import BaseModel
 from enum import Enum
 
 
-# разделить все-таки на
-
-class SosRitual(BaseModel):
-    id: int | None = None
+class SosRitualToCreate(BaseModel):
     category: str
     situation: str
     title: str
     description: str
     url: str | None = None
     tags: List[str] | None = None
+
+
+class SosRitual(SosRitualToCreate):
+    id: int | None = None
+
+
+class SosCategory(BaseModel):
+    id: int
+    name: str
+
+
+class SosSituation(BaseModel):
+    id: int
+    name: str
 
 
 class SosTable(str, Enum):
