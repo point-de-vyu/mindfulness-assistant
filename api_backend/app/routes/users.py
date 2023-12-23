@@ -4,18 +4,19 @@ from fastapi import status
 from fastapi import Depends
 from api_backend.app.auth import get_user_id_by_token
 from api_backend.app.logger import get_logger
-from api_backend.app.utils import get_postgres_engine
+from api_backend.app.utils.mng_getters import get_user_manager
+from api_backend.app.utils.error_raisers import raise_404_error
 from api_backend.app.schemes.user import User
 from api_backend.app.schemes.user import UserToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.app.managers.user_manager import UserManager
-from api_backend.app.utils import raise_404_error
-from typing import Dict
-import sqlalchemy
 
+from typing import Dict
+from typing import Annotated
 
 logger = get_logger()
 router = APIRouter(tags=["users"])
+UserMngDep = Annotated[UserManager, Depends(get_user_manager)]
 
 
 @router.post(
@@ -24,10 +25,9 @@ router = APIRouter(tags=["users"])
 )
 def add_new_user(
         user: UserToCreate,
-        db_engine: sqlalchemy.Engine = Depends(get_postgres_engine)
+        user_mng: UserMngDep
 ) -> Dict[str, str]:
     logger.info(f"Creating new user {user}")
-    user_mng = UserManager(engine=db_engine, logger=logger)
     try:
         id, token = user_mng.add_new_user(user)
     except RuntimeError as runt_err:
@@ -42,10 +42,9 @@ def add_new_user(
 )
 def get_user_by_username(
         username: str,
-        db_engine: sqlalchemy.Engine = Depends(get_postgres_engine)
+        user_mng: UserMngDep
 ) -> User:
     logger.info(f"Getting user data for {username=}")
-    user_mng = UserManager(engine=db_engine, logger=logger)
     user = user_mng.get_by_username(username)
     if not user:
         raise_404_error(ErrorMsg.USER_NOT_FOUND)
@@ -58,10 +57,9 @@ def get_user_by_username(
 )
 def get_user_by_username(
         id: int,
-        db_engine: sqlalchemy.Engine = Depends(get_postgres_engine)
+        user_mng: UserMngDep
 ) -> User:
     logger.info(f"Getting user data for {id=}")
-    user_mng = UserManager(engine=db_engine, logger=logger)
     user = user_mng.get_by_id(id)
     if not user:
         raise_404_error(ErrorMsg.USER_NOT_FOUND)
@@ -73,12 +71,11 @@ def get_user_by_username(
     summary="Delete user and all their data"
 )
 def delete_user(
-        db_engine: sqlalchemy.Engine = Depends(get_postgres_engine),
+        user_mng: UserMngDep,
         user_id: int = Depends(get_user_id_by_token)
 ) -> None:
     # мб фиг с 500? все равно клиент их получит, а так можно без трай, если пустой лист юзера - шлем ошибкку:
     logger.info(f"Deleting user data for {user_id=}")
-    user_mng = UserManager(engine=db_engine, logger=logger)
     user_deleted = user_mng.delete_user(user_id)
     if not user_deleted:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete?")

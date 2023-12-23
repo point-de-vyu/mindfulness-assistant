@@ -1,8 +1,6 @@
 import sqlalchemy
-from sqlalchemy import func
 from api_backend.app.schemes.user import User, UserToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
-from api_backend.app.utils import get_postgres_engine
 from api_backend.app import auth
 import logging
 from typing import Dict, List, Tuple
@@ -16,8 +14,6 @@ class UserManager:
             engine: sqlalchemy.Engine,
             logger: logging.Logger
     ):
-        if not engine:
-            engine = get_postgres_engine()
         self.sql_connection = engine.connect()
         metadata = sqlalchemy.MetaData()
         self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
@@ -86,5 +82,3 @@ class UserManager:
             self.logger.critical(f"Failed to delete user with {user_id}")
             return False
         return True
-
-

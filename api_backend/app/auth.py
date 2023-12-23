@@ -2,8 +2,8 @@ import secrets
 import sqlalchemy
 from fastapi import Depends
 from fastapi import Header
-from api_backend.app.utils import get_postgres_engine
-from api_backend.app.utils import raise_401_error
+from api_backend.app.utils.db import get_postgres_engine
+from api_backend.app.utils.error_raisers import raise_401_error
 
 
 def generate_token() -> str:
@@ -11,7 +11,7 @@ def generate_token() -> str:
 
 
 def get_user_id_by_token(
-        token: str = Header(alias="auth-token"),
+        token: str = Header(alias="Authorization"),
         db_engine: sqlalchemy.Engine = Depends(get_postgres_engine)
 ) -> int:
     conn = db_engine.connect()
