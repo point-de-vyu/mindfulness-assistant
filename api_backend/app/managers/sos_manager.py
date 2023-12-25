@@ -51,8 +51,6 @@ class SosSelfHelpManager:
         query = sqlalchemy.select('*').select_from(sqlalchemy.func.get_default_sos_rituals(category_id, situation_id))
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
-        if not rows:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
