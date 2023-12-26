@@ -32,21 +32,17 @@ class AssistantApi(TestClient):
             headers=self._get_auth_headers(auth_token),
         )
 
-#  docker exec api_backend-backend_api-1 pytest /app/api_backend/app/tests/conftest.py
-
 
 def get_postgres_engine_for_testing(db_name: str | None = None, is_autocommit: bool = False) -> sqlalchemy.engine.Engine:
-    # test_db_name = "unittest_db"
     test_db_name = os.environ["TEST_DB_NAME"]
     return get_postgres_engine(db_name=test_db_name)
 
 
-# override dep to use test DB
-# app.dependency_overrides[get_postgres_engine] = get_postgres_engine_for_testing
-
 @pytest.fixture()
 def api():
     from api_backend.app.main import app
+    # override dependency to use test DB
+    app.dependency_overrides[get_postgres_engine] = get_postgres_engine_for_testing
     api = AssistantApi(app=app)
     yield api
 

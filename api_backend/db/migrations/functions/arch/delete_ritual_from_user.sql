@@ -17,4 +17,4 @@ RETURNS BOOL AS $$
 		END IF;
 		RETURN true;
 	END;
-LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;

@@ -2,7 +2,7 @@ CREATE FUNCTION public.add_default_sos_ritual(IN category character varying, IN 
     RETURNS boolean
     LANGUAGE 'plpgsql'
     VOLATILE
-AS $BODY$
+AS $$
 DECLARE _rit_id BIGINT = generate_ritual_id();
 DECLARE _cat_id INT = (SELECT id FROM sos_categories WHERE name = category);
 DECLARE _sit_id INT = (SELECT id FROM sos_situations WHERE name = situation);
@@ -20,7 +20,7 @@ BEGIN
 	INSERT INTO sos_rituals_default_ids VALUES (_rit_id);
 	RETURN true;
 END;
-$BODY$;
+$$ LANGUAGE plpgsql;
 
 ALTER FUNCTION public.add_default_sos_ritual(character varying, character varying, text, text, text, json)
     OWNER TO postgres;
