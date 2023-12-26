@@ -37,6 +37,20 @@ def add_new_user(
 
 
 @router.get(
+    "/users/",
+    summary="Get user info"
+)
+def get_user(
+    user_mng: UserMngDep,
+    user_id: int = Depends(get_user_id_by_token)
+) -> User:
+    user = user_mng.get_by_id(user_id)
+    if not user:
+        raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
+    return user
+
+
+@router.get(
     "/user_by_username/{username}",
     summary="Get user by their unique username"
 )

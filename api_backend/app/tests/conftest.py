@@ -32,6 +32,12 @@ class AssistantApi(TestClient):
             headers=self._get_auth_headers(auth_token),
         )
 
+    def delete_with_auth(self, url: str, auth_token: str | None = None) -> Response:
+        return self.delete(
+            url=url,
+            headers=self._get_auth_headers(auth_token),
+        )
+
 
 def get_postgres_engine_for_testing(db_name: str | None = None, is_autocommit: bool = False) -> sqlalchemy.engine.Engine:
     test_db_name = os.environ["TEST_DB_NAME"]
@@ -41,12 +47,12 @@ def get_postgres_engine_for_testing(db_name: str | None = None, is_autocommit: b
 @pytest.fixture()
 def api():
     from api_backend.app.main import app
+    api = AssistantApi(app=app)
     # override dependency to use test DB
     app.dependency_overrides[get_postgres_engine] = get_postgres_engine_for_testing
-    api = AssistantApi(app=app)
     yield api
 
 
-def test_read_root(api: AssistantApi):
+def test_read_root(api: AssistantApi) -> None:
     response = api.get("/")
     assert response.status_code == 200
