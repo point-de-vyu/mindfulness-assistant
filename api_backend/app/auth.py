@@ -11,7 +11,8 @@ def generate_token() -> str:
 
 
 def get_user_id_by_token(
-        token: str = Header(alias="Authorization"),
+        # todo подумать об имени либо другой способ
+        token: str = Header(alias="assist-auth"),
         db_engine: sqlalchemy.Engine = Depends(get_postgres_engine)
 ) -> int:
     conn = db_engine.connect()

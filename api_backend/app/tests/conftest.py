@@ -20,7 +20,7 @@ class AssistantApi(TestClient):
 
     def _get_auth_headers(self, token: str | None = None):
         token = token or self._get_default_auth_token()
-        return {"Authorization": token}
+        return {"assist-auth": token}
 
     def get_with_auth(self, url: str, auth_token: str | None = None) -> Response:
         return self.get(url=url, headers=self._get_auth_headers(auth_token))

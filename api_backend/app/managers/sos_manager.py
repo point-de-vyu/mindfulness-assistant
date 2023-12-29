@@ -150,6 +150,7 @@ class SosSelfHelpManager:
         self.logger.info(f"Added {ritual_id=} for {user_id=}")
 
     def remove_ritual_from_user_data(self, user_id: int, ritual_id: int) -> None:
+        # todo check if it's even there else 404
         query = sqlalchemy.func.delete_ritual_from_user_data(user_id, ritual_id)
         executed_query = self.sql_connection.execute(query)
         self.sql_connection.commit()
