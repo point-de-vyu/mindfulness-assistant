@@ -91,7 +91,7 @@ class SosSelfHelpManager:
             )
         )
         self.sql_connection.commit()
-        result = result.scalar()
+        result = result.scalar_one_or_none()
         if not result:
             msg = ErrorMsg.FAILED_DB_RESULT
             self.logger.critical(msg)
