@@ -31,14 +31,3 @@ INSERT INTO sos_rituals_default_ids (id) VALUES
     (3000125081702034357),
     (3000556251702034486),
     (3000584191702058496);
-
-
--- ADD a test user
-
-INSERT INTO users(id, username, first_name, last_name) VALUES (
-	1000470011703256448, '@test_user', 'Jane', 'Doe'
-);
-
-INSERT INTO user_tokens(user_id, token) VALUES (
-	1000470011703256448, '7ad67dbd1856b031af3e529e0c5755a2542efe7b0a0aba385c5660899986bce7'
-);
