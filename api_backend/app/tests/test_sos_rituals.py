@@ -1,7 +1,4 @@
-import json
-
 import pytest
-from typing import List
 from api_backend.app.tests.conftest import AssistantApi
 from api_backend.app.schemes.sos_rituals import SosRitualToCreate
 from api_backend.app.schemes.sos_rituals import SosRitual
