@@ -10,7 +10,9 @@ from api_backend.app.logger import get_logger
 from api_backend.app.utils.mng_getters import get_sos_manager
 from api_backend.app.utils.error_raisers import raise_400_error
 from api_backend.app.utils.error_raisers import raise_404_error
+from api_backend.app.utils.error_raisers import raise_409_error
 from api_backend.app.managers.sos_manager import SosSelfHelpManager
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(tags=["sos_rituals"])
 logger = get_logger()
@@ -137,6 +139,8 @@ def add_default_ritual_for_user(
         sos_mng.add_default_ritual_for_user(user_id, default_ritual_id)
     except ValueError as err:
         raise_400_error(msg=str(err))
+    except IntegrityError:
+        raise_409_error(msg=ErrorMsg.RITUAL_ALREADY_ADDED)
 
 
 @router.delete(

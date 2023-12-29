@@ -176,24 +176,25 @@ def test_get_user_rituals_with_wrong_combo(api: AssistantApi, category: str, sit
 
 
 def test_add_ok_default_ritual_to_user(api: AssistantApi, correct_default_ritual_id: int) -> None:
-    get_user_rits_response = api.get_with_auth("/v1/sos_rituals/")
-    assert get_user_rits_response.status_code == 200
-    # might be []
-    assert get_user_rits_response.json() is not None
-    prev_numb_of_rits = len(get_user_rits_response.json())
-
     id = correct_default_ritual_id
     post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
     assert post_response.status_code == 200
 
-    get_user_rits_response_after_post = api.get_with_auth("/v1/sos_rituals/")
+    get_user_rits_response_after_post = api.get_with_auth(f"/v1/sos_rituals/{id}")
     assert get_user_rits_response_after_post.status_code == 200
     assert get_user_rits_response_after_post.json() is not None
-    new_numb_of_rits = len(get_user_rits_response_after_post.json())
-    assert new_numb_of_rits - prev_numb_of_rits == 1
 
     delete_response = api.delete_with_auth(url=f"/v1/sos_rituals/{id}")
     assert delete_response.status_code == 200
+
+
+def test_add_duplicate_default_ritual_to_user(api: AssistantApi, correct_default_ritual_id: int) -> None:
+    id = correct_default_ritual_id
+    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
+    assert post_response.status_code == 200
+
+    post_duplicate_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
+    assert post_duplicate_response.status_code == 409
 
 
 def test_add_wrong_default_ritual_to_user(api: AssistantApi, wrong_default_ritual_id: int) -> None:
@@ -215,6 +216,8 @@ def test_add_correct_custom_ritual_to_user(api: AssistantApi, ok_ritual_to_creat
     created_ritual = SosRitual(**get_created_ritual_response.json())
     assert ritual.title == created_ritual.title
     assert ritual.description == created_ritual.description
+    assert ritual.category == created_ritual.category
+    assert ritual.situation == created_ritual.situation
     assert ritual.url == created_ritual.url
 
     delete_response = api.delete_with_auth(url=f"/v1/sos_rituals/{created_ritual_id}")

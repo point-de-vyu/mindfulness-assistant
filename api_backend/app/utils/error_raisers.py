@@ -21,3 +21,11 @@ def raise_404_error(msg: str = "Not found") -> None:
         status_code=status.HTTP_404_NOT_FOUND,
         detail=msg
     )
+
+
+def raise_409_error(msg: str = "Record already exists") -> None:
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=msg
+    )
+

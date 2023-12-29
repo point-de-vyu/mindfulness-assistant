@@ -14,6 +14,8 @@ class ErrorMsg(str, Enum):
     FAILED_DB_RESULT = "DB did not return a result"
 
     SOS_RITUAL_ID_NOT_IN_USER = "User has no ritual with such id"
+    RITUAL_ALREADY_ADDED = "User already added ritual with this id"
+    USER_ALREADY_EXISTS = "User with this username already exists"
 
     def __str__(self):
         return self.value

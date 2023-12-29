@@ -100,30 +100,14 @@ class SosSelfHelpManager:
 
     def _get_category_id(self, category_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
-        rows = result.fetchmany()
-        if len(rows) > 1:
-            msg = ErrorMsg.ROWS_MORE_THAN_ONE
-            self.logger.critical(msg)
-            raise RuntimeError(msg)
-        # TODO треш, что с этим делать? это rows[0]._asdict()
-        """
-        [
-            {
-                "funct_name_1": result
-            }
-        ]
-        """
-        result = rows[0][0]
+        result = result.scalar_one_or_none()
         if not result:
             raise ValueError(ErrorMsg.SOS_CATEGORY_INVALID)
         return result
 
     def _get_situation_id(self, situation_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_situation_id_from_name(situation_name))
-        rows = result.fetchmany()
-        if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
-        result = rows[0][0]
+        result = result.scalar_one_or_none()
         if not result:
             raise ValueError(ErrorMsg.SOS_SITUATION_INVALID)
         return result
@@ -149,7 +133,6 @@ class SosSelfHelpManager:
         executed_query = self.sql_connection.execute(query)
         inserted_pkey = executed_query.inserted_primary_key
         self.sql_connection.commit()
-        # TODO  sqlalchemy.exc.IntegrityError:
         if not inserted_pkey:
             self.logger.critical(f"Failed to add {ritual_id=} for {user_id=}")
             raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
