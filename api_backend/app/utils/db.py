@@ -13,14 +13,16 @@ def get_db_connection_parameters():
     return endpoint, main_db, username, password
 
 
-def get_postgres_engine(db_name: str | None = None, is_autocommit: bool = False) -> sqlalchemy.engine.Engine:
+def get_db_url(db_name: str | None = None) -> str:
     db_endpoint, main_db_name, db_username, db_password = get_db_connection_parameters()
     db_name = db_name or main_db_name
-    engine = sqlalchemy.create_engine(
-        f'postgresql+psycopg2://{db_username}:{db_password}@{db_endpoint}/{db_name}', echo=False
-    )
-    if is_autocommit:
-        engine = engine.execution_options(autocommit=True)
+    return f"postgresql+psycopg2://{db_username}:{db_password}@{db_endpoint}/{db_name}"
+
+
+def get_postgres_engine(db_name: str | None = None) -> sqlalchemy.engine.Engine:
+    db_endpoint, main_db_name, db_username, db_password = get_db_connection_parameters()
+    db_name = db_name or main_db_name
+    engine = sqlalchemy.create_engine(get_db_url(db_name), echo=False)
     return engine
 
 
