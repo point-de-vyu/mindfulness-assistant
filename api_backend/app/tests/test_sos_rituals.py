@@ -79,6 +79,7 @@ def correct_default_ritual_id() -> int:
 def wrong_default_ritual_id() -> int:
     return 2000129247500863806
 
+
 def test_get_sos_categories(api: AssistantApi) -> None:
     response = api.get_with_auth(url="/v1/sos_categories/")
     assert response.status_code == 200
