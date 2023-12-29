@@ -51,8 +51,6 @@ class SosSelfHelpManager:
         query = sqlalchemy.select('*').select_from(sqlalchemy.func.get_default_sos_rituals(category_id, situation_id))
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
-        if not rows:
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
@@ -71,6 +69,13 @@ class SosSelfHelpManager:
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
+    def get_user_ritual_by_id(self, user_id: int, ritual_id: int) -> SosRitual | None:
+        user_rituals = self.get_user_rituals(user_id)
+        for ritual in user_rituals:
+            if ritual.id == ritual_id:
+                return ritual
+        return None
+
     def add_custom_ritual(self, user_id: int, custom_ritual: SosRitualToCreate) -> int:
         category_id = self._get_category_id(custom_ritual.category)
         situation_id = self._get_situation_id(custom_ritual.situation)
@@ -86,8 +91,7 @@ class SosSelfHelpManager:
             )
         )
         self.sql_connection.commit()
-        rows = result.fetchmany()
-        result = rows[0][0]
+        result = result.scalar_one_or_none()
         if not result:
             msg = ErrorMsg.FAILED_DB_RESULT
             self.logger.critical(msg)
@@ -96,30 +100,14 @@ class SosSelfHelpManager:
 
     def _get_category_id(self, category_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
-        rows = result.fetchmany()
-        if len(rows) > 1:
-            msg = ErrorMsg.ROWS_MORE_THAN_ONE
-            self.logger.critical(msg)
-            raise RuntimeError(msg)
-        # TODO треш, что с этим делать? это rows[0]._asdict()
-        """
-        [
-            {
-                "funct_name_1": result
-            }
-        ]
-        """
-        result = rows[0][0]
+        result = result.scalar_one_or_none()
         if not result:
             raise ValueError(ErrorMsg.SOS_CATEGORY_INVALID)
         return result
 
     def _get_situation_id(self, situation_name: str) -> int:
         result = self.sql_connection.execute(sqlalchemy.func.get_situation_id_from_name(situation_name))
-        rows = result.fetchmany()
-        if len(rows) > 1:
-            raise RuntimeError(ErrorMsg.ROWS_MORE_THAN_ONE)
-        result = rows[0][0]
+        result = result.scalar_one_or_none()
         if not result:
             raise ValueError(ErrorMsg.SOS_SITUATION_INVALID)
         return result
@@ -145,13 +133,16 @@ class SosSelfHelpManager:
         executed_query = self.sql_connection.execute(query)
         inserted_pkey = executed_query.inserted_primary_key
         self.sql_connection.commit()
-        # TODO  sqlalchemy.exc.IntegrityError:
         if not inserted_pkey:
             self.logger.critical(f"Failed to add {ritual_id=} for {user_id=}")
             raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         self.logger.info(f"Added {ritual_id=} for {user_id=}")
 
     def remove_ritual_from_user_data(self, user_id: int, ritual_id: int) -> None:
+        ritual = self.get_user_ritual_by_id(user_id, ritual_id)
+        if not ritual:
+            raise ValueError(ErrorMsg.SOS_RITUAL_ID_NOT_IN_USER)
+
         query = sqlalchemy.func.delete_ritual_from_user_data(user_id, ritual_id)
         executed_query = self.sql_connection.execute(query)
         self.sql_connection.commit()
