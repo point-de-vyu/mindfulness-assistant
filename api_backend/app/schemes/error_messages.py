@@ -13,5 +13,7 @@ class ErrorMsg(str, Enum):
     ROWS_MORE_THAN_ONE = "Found > 1 rows in DB when it should be 1"
     FAILED_DB_RESULT = "DB did not return a result"
 
+    SOS_RITUAL_ID_NOT_IN_USER = "User has no ritual with such id"
+
     def __str__(self):
         return self.value

@@ -69,6 +69,13 @@ class SosSelfHelpManager:
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
+    def get_user_ritual_by_id(self, user_id: int, ritual_id: int) -> SosRitual | None:
+        user_rituals = self.get_user_rituals(user_id)
+        for ritual in user_rituals:
+            if ritual.id == ritual_id:
+                return ritual
+        return None
+
     def add_custom_ritual(self, user_id: int, custom_ritual: SosRitualToCreate) -> int:
         category_id = self._get_category_id(custom_ritual.category)
         situation_id = self._get_situation_id(custom_ritual.situation)
@@ -84,8 +91,7 @@ class SosSelfHelpManager:
             )
         )
         self.sql_connection.commit()
-        rows = result.fetchmany()
-        result = rows[0][0]
+        result = result.scalar()
         if not result:
             msg = ErrorMsg.FAILED_DB_RESULT
             self.logger.critical(msg)
@@ -150,7 +156,10 @@ class SosSelfHelpManager:
         self.logger.info(f"Added {ritual_id=} for {user_id=}")
 
     def remove_ritual_from_user_data(self, user_id: int, ritual_id: int) -> None:
-        # todo check if it's even there else 404
+        ritual = self.get_user_ritual_by_id(user_id, ritual_id)
+        if not ritual:
+            raise ValueError(ErrorMsg.SOS_RITUAL_ID_NOT_IN_USER)
+
         query = sqlalchemy.func.delete_ritual_from_user_data(user_id, ritual_id)
         executed_query = self.sql_connection.execute(query)
         self.sql_connection.commit()
