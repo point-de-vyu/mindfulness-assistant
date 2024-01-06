@@ -77,7 +77,7 @@ class AssistantApi(TestClient):
         self.auth_token = token
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def api():
     from api_backend.app.main import app
     api = AssistantApi(app=app)
