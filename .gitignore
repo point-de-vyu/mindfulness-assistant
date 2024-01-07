@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 
 api_backend/db/password.txt
+telegram_client/app/mock_storage.json
