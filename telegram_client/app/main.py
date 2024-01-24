@@ -4,6 +4,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from telegram_client.app.handlers import start
+from telegram_client.app.handlers import sos
 from telegram_client.app.handlers import undef
 
 
@@ -12,6 +13,7 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
     dispatcher = Dispatcher()
     dispatcher.include_router(start.router)
+    dispatcher.include_router(sos.router)
     dispatcher.include_router(undef.router)
     # await dispatcher.storage.set_data()
     await dispatcher.start_polling(bot)
