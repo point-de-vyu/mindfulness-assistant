@@ -19,13 +19,13 @@ class UserManager:
         self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
         self.logger = logger
 
-    def add_new_user(self, user: UserToCreate) -> Tuple[int, str]:
-        user_token = auth.generate_token()
+    def add_new_user(self, user: UserToCreate, client_id: int) -> int:
         executed_query = self.sql_connection.execute(sqlalchemy.func.add_new_user(
             user.username,
             user.first_name,
             user.last_name,
-            user_token
+            client_id,
+            user.id_from_client
         ))
         self.sql_connection.commit()
         user_id = executed_query.scalar()
@@ -33,7 +33,7 @@ class UserManager:
             msg = ErrorMsg.FAILED_DB_RESULT
             self.logger.critical(f"{msg} adding new user")
             raise RuntimeError(msg)
-        return (user_id, user_token)
+        return user_id
 
     def get_by_id(self, id: int) -> User | None:
         return self._get_user(id=id)

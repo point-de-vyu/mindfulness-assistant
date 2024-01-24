@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 
-CREATE TABLE IF NOT EXISTS user_tokens (
-    user_id bigint PRIMARY KEY UNIQUE NOT NULL,
-    token character varying(64) UNIQUE NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
+--CREATE TABLE IF NOT EXISTS user_tokens (
+--    user_id bigint PRIMARY KEY UNIQUE NOT NULL,
+--    token character varying(64) UNIQUE NOT NULL,
+--    FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+--);

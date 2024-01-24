@@ -1,8 +1,9 @@
 CREATE OR REPLACE FUNCTION add_new_user(
-    _username text,
-    _first_name text,
-    _last_name text,
-    _token character varying
+    _username TEXT,
+    _first_name TEXT,
+    _last_name TEXT,
+    _client_id INT,
+    _user_id_from_client INT
     )
     RETURNS bigint
     LANGUAGE plpgsql
@@ -13,7 +14,7 @@ BEGIN
 	_id = generate_user_id();
 	_date_regitered = NOW();
 	INSERT INTO users VALUES (_id, _username, _first_name, _last_name, _date_regitered);
-	INSERT INTO user_tokens VALUES (_id, _token);
+	INSERT INTO clients_users VALUES(_client_id, _user_id_from_client, _id);
 	RETURN _id;
 END;
 $$;

@@ -3,12 +3,16 @@ from typing import Optional
 from datetime import date
 
 
-class UserToCreate(BaseModel):
+class BaseUser(BaseModel):
     first_name: str
     last_name: str
     username: str
 
 
-class User(UserToCreate):
+class UserToCreate(BaseUser):
+    id_from_client: int
+
+
+class User(BaseUser):
     id: int
     date_registered: str | date
