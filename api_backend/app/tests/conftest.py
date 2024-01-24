@@ -30,9 +30,10 @@ class AssistantApi(TestClient):
             self._add_default_test_user(connection)
         connection.close()
 
-    def _get_auth_headers(self, token: str | None = None):
+    def _get_auth_headers(self, token: str | None = None, id: str | None = None):
         token = token or self.auth_token
-        return {"assist-auth": token}
+        id = id or self.id
+        return {"client-token": token, "id_from_client": id}
 
     def get_with_auth(self, url: str, auth_token: str | None = None) -> Response:
         return self.get(url=url, headers=self._get_auth_headers(auth_token))
@@ -65,16 +66,21 @@ class AssistantApi(TestClient):
         username = os.environ["TEST_USERNAME"]
         first_name = os.environ["TEST_FIRSTNAME"]
         last_name = os.environ["TEST_LASTNAME"]
+        # TODO add and test
+        id = os.environ["TEST_ID"]
+        client_id = os.environ["TEST_CLIENT_ID"]
         token = os.environ["TEST_USER_AUTH_TOKEN"]
         connection.execute(sqlalchemy.func.add_new_user(
             username,
             first_name,
             last_name,
-            token
+            client_id,
+            id
             )
         )
         connection.commit()
         self.auth_token = token
+        self.id = id
 
 
 @pytest.fixture(scope="session")
