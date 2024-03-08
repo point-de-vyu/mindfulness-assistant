@@ -1,8 +1,8 @@
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove
-import random
+from aiogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram_client.app.handlers.sign_up import explain_signing_up
 
 router = Router()
 
@@ -10,24 +10,18 @@ router = Router()
 @router.message(Command("start"))
 async def greet_on_start(message: Message, state: FSMContext):
     user = message.from_user
-    user_id = user.id
     name = user.first_name
     username = user.username
-    # TODO make real storage
-    existing_user = random.choice([True, False])
-    if existing_user:
-        greeting_text = f"Hello {name if name else username}. Good to see you again!"
-        function_text = "No need to press start anymore. You can use the menu to navigate ;)"
-    else:
-        greeting_text = f"Hello {name if name else username}. Glad to meet you!"
-        function_text = f"You can see the commands I can perform in the menu. Remember that " \
-                        f"I'm work in progress and hopefully I'll grow big and cool. I'll do my best to help you."
-    await message.answer(
-        text=greeting_text,
-        reply_markup=ReplyKeyboardRemove()
-    )
-    await message.answer(
-        text=function_text
-    )
+    greeting = f"Hello {name if name else username}. Glad to meet you!"
+    intro = f"I'm designed to help you with your mindfulness and mental health."
+    await message.answer(text=greeting)
+    await message.answer(text=intro)
+    await skills(message, state)
 
 
+@router.message(Command("menu"))
+async def skills(message: Message, state: FSMContext):
+    text1 = "At the moment, you can call a /sos command if you feel overwhelmed, and I'll offer you an exercise to " \
+           "try to deal with your feelings."
+    await message.answer(text=text1)
+    await explain_signing_up(message)
