@@ -9,11 +9,13 @@ from telegram_client.app.handlers import sos
 from telegram_client.app.handlers import undef
 from telegram_client.app.handlers import error
 
+memory_storage = MemoryStorage()
+
 
 async def main():
     bot = Bot(token=os.environ["DEBUG_BOT_TOKEN"])
     logging.basicConfig(level=logging.DEBUG)
-    dispatcher = Dispatcher(storage=MemoryStorage)
+    dispatcher = Dispatcher(storage=memory_storage)
     dispatcher.include_router(start.router)
     dispatcher.include_router(sign_up.router)
     dispatcher.include_router(sos.router)
