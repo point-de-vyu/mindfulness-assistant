@@ -19,7 +19,6 @@ async def greet_on_start(message: Message, state: FSMContext):
     await skills(message, state)
 
 
-@router.message(Command("menu"))
 async def skills(message: Message, state: FSMContext):
     text1 = "At the moment, you can call a /sos command if you feel overwhelmed, and I'll offer you an exercise to " \
            "try to deal with your feelings."
