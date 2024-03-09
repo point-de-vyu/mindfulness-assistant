@@ -2,7 +2,8 @@ from aiogram import F, Router
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, \
+    InlineKeyboardMarkup
 from telegram_client.app.utils.requests import get_headers
 import requests
 import os
@@ -27,9 +28,9 @@ async def show_sos_situations(message: Message):
     status_code = response.status_code
     if status_code == 200:
         situations = response.json()
-        buttons = [InlineKeyboardButton(text=sit, callback_data=sit) for sit in situations]
+        buttons = [KeyboardButton(text=sit) for sit in situations]
         ans = "What are you dealing with?"
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[buttons])
+        keyboard = ReplyKeyboardMarkup(keyboard=[buttons], resize_keyboard=True, one_time_keyboard=True)
         await message.answer(
             text=ans,
             reply_markup=keyboard
@@ -43,12 +44,12 @@ async def show_sos_situations(message: Message):
 
 
 async def get_rituals(
-        callback: CallbackQuery,
+        message: Message,
         is_default: bool = False,
         situation: str | None = None,
         category: str | None = None
 ):
-    headers = get_headers(str(callback.from_user.id))
+    headers = get_headers(str(message.from_user.id))
     route = "sos_defaults" if is_default else "sos_rituals"
     url = f"http://{API_ENDPOINT}/{route}/"
     if situation:
@@ -60,7 +61,7 @@ async def get_rituals(
     status_code = response.status_code
 
     if status_code != 200:
-        await error(callback.message)
+        await error(message)
         return
 
     rituals = response.json()
@@ -68,29 +69,54 @@ async def get_rituals(
     return rituals
 
 
-@router.callback_query(F.data.lower().in_({"anger", "anxiety", "stress"}))
-async def get_rituals_for_situation(callback: CallbackQuery):
-    situation = callback.data
-    await add_data_to_storage({"sos_situation": situation}, callback.from_user.id)
-    rituals = await get_rituals(callback, situation=situation)
-    buttons = [[InlineKeyboardButton(text="Journal you feelings after the exercise", callback_data="journal_after_sos")]]
+@router.message(F.text.lower().in_({"anger", "anxiety", "stress"}))
+async def get_rituals_for_situation(message: Message):
+    situation = message.text
+    await add_data_to_storage({"sos_situation": situation}, message.from_user.id)
+    rituals = await get_rituals(message, situation=situation)
+    buttons = [[KeyboardButton(text="Journal you feelings after this exercise")]]
     if not rituals:
-        default_rituals = await get_rituals(callback, is_default=True, situation=situation)
+        default_rituals = await get_rituals(message, is_default=True, situation=situation)
         if not default_rituals:
-            await error(callback.message)
+            await error(message)
             return
         rituals = default_rituals
-        await callback.message.answer(
-            text=f"You haven't added or created your {situation.lower()} rituals. Here's my suggestion"
+        await message.answer(
+            text=f"You haven't added or created your {situation.lower()} rituals. Here's my suggestion:"
         )
-        buttons.append([InlineKeyboardButton(text="Add to favourites", callback_data="add_ritual_to_fav")])
+        buttons.append([KeyboardButton(text="Add to favourites")])
     current_ritual = rituals.pop()
     available_categories = list(set([ritual["category"] for ritual in rituals]))
-    buttons.extend([[InlineKeyboardButton(text=cat, callback_data=cat) for cat in available_categories]])
+    buttons.extend([[KeyboardButton(text=cat) for cat in available_categories]])
 
-    await add_data_to_storage({"current_ritual": current_ritual, "available_rituals": rituals}, callback.from_user.id)
-    await callback.message.answer(
+    await add_data_to_storage({"current_ritual": current_ritual, "available_rituals": rituals}, message.from_user.id)
+    await message.answer(
         text=f"<b>{current_ritual['title']}</b>\n\n{current_ritual['description']}\n\n{current_ritual['url']}",
         parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+        reply_markup=ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True, one_time_keyboard=True)
+    )
+
+
+@router.message(F.text.lower().in_({"meditation", "affirmation", "breathing exercise"}))
+async def get_ritual_for_category(message: Message):
+    # мб лучше не запоминать, а тоже стучаться в дб, а потом проверять, что айдишник не равен текущему
+    # но в этом случае будем бесконечно повторять все доступные, и можем случайно предложить предыдущее
+    category = message.text
+    rituals = await extract_data_from_storage("available_rituals", message.from_user.id)
+    if not rituals:
+        await message.answer(text="I'm afraid there's no more")
+        return
+    buttons = [
+        [KeyboardButton(text="Journal you feelings after the exercise")]]
+
+    current_ritual = [ritual for ritual in rituals if ritual["category"] == category][0]
+    rituals.remove(current_ritual)
+    available_categories = list(set([ritual["category"] for ritual in rituals]))
+    buttons.extend([[KeyboardButton(text=cat) for cat in available_categories]])
+
+    await add_data_to_storage({"current_ritual": current_ritual, "available_rituals": rituals}, message.from_user.id)
+    await message.answer(
+        text=f"<b>{current_ritual['title']}</b>\n\n{current_ritual['description']}\n\n{current_ritual['url']}",
+        parse_mode=ParseMode.HTML,
+        reply_markup=ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True, one_time_keyboard=True)
     )
