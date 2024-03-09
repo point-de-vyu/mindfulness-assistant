@@ -139,3 +139,31 @@ async def get_ritual_for_category(message: Message):
         parse_mode=ParseMode.HTML,
         reply_markup=ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True, one_time_keyboard=True)
     )
+
+
+@router.message(F.text == "Add to favourites")
+async def favourite_default_ritual(message: Message):
+    user_id = message.from_user.id
+    ritual = await extract_data_from_storage("current_ritual", user_id)
+    if not ritual:
+        await error(message)
+        return
+    ritual_id = ritual["id"]
+    headers = get_headers(str(user_id))
+    response = requests.post(
+        url=f"http://{API_ENDPOINT}/default_sos_ritual/?default_ritual_id={ritual_id}",
+        headers=headers
+    )
+    status_code = response.status_code
+    if status_code == 200:
+        await message.answer(
+            text="Added this ritual! Next time you'll see it among the first ones",
+            reply_markup=ReplyKeyboardRemove()
+        )
+    elif status_code == 409:
+        await message.answer(text="This one is already in your favourites",
+                             reply_markup=ReplyKeyboardRemove()
+                             )
+    else:
+        await error(message)
+
