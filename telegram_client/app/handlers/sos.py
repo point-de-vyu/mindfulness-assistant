@@ -9,24 +9,45 @@ from telegram_client.app.utils.requests import get_headers, get_base_url
 import requests
 import random
 import logging
+from enum import Enum
 from telegram_client.app.handlers.sign_up import forbidden_need_signing_up
 from telegram_client.app.handlers.error import error
 from telegram_client.app.handlers.not_implemented import not_implemented
 from telegram_client.app.utils.storage import extract_data_from_storage, add_data_to_storage, delete_key_from_storage
 from telegram_client.app.schemes.sos_rituals import SosRitual
 from telegram_client.app.utils.types import Update
-
 from aiogram.utils.formatting import Bold, TextLink, as_list
 
 
 router = Router()
 
 
+SOS_ID_REGEXP = r"3\d{18}"
+
+
+class MemoryKey(str, Enum):
+    SOS_SITUATION = "sos_situation"
+    SOS_CATEGORY = "sos_category"
+    AVAIL_RITUALS = "available_rituals"
+    IS_LAST_RITUAL_DEFAULT = "is_last_ritual_default"
+    
+    def __str__(self):
+        return self.value
+
+
+class SosSearchParams(str, Enum):
+    SITUATION = "situation"
+    CATEGORY = "category"
+
+    def __str__(self):
+        return self.value
+
+    
 async def clear_memory_vars(user_id: int):
-    await delete_key_from_storage("sos_situation", user_id)
-    await delete_key_from_storage("sos_category", user_id)
-    await delete_key_from_storage("available_rituals", user_id)
-    await delete_key_from_storage("is_default_last_ritual", user_id)
+    await delete_key_from_storage(MemoryKey.SOS_SITUATION, user_id)
+    await delete_key_from_storage(MemoryKey.SOS_CATEGORY, user_id)
+    await delete_key_from_storage(MemoryKey.AVAIL_RITUALS, user_id)
+    await delete_key_from_storage(MemoryKey.IS_LAST_RITUAL_DEFAULT, user_id)
 
 
 @router.message(Command("sos"))
@@ -70,7 +91,7 @@ async def get_rituals(update: Update, is_default: bool, search_params: Dict[str,
 @router.message(F.text.lower().in_({"anger", "anxiety", "stress"}))
 async def get_rituals_for_situation(message: Message):
     situation = message.text
-    params = {"situation": situation}
+    params = {SosSearchParams.SITUATION: situation}
     rituals = await get_rituals(message, is_default=False, search_params=params)
     is_default_last_ritual = False
     if not rituals:
@@ -86,11 +107,10 @@ async def get_rituals_for_situation(message: Message):
 
     current_ritual = rituals.pop()
     data = {
-        "available_rituals": rituals,
-        "sos_situation": situation,
-        "is_default_last_ritual": is_default_last_ritual
+        MemoryKey.AVAIL_RITUALS: rituals,
+        MemoryKey.SOS_SITUATION: situation,
+        MemoryKey.IS_LAST_RITUAL_DEFAULT: is_default_last_ritual
     }
-    logging.debug(f"{current_ritual=}, {rituals=}")
     await add_data_to_storage(data, message.from_user.id)
     await get_and_show_ritual(rituals, current_ritual, message)
 
@@ -106,8 +126,8 @@ async def no_more_rituals(callback: CallbackQuery):
 async def get_ritual_for_category(callback: CallbackQuery):
     user_id = callback.from_user.id
     category = callback.data
-    await add_data_to_storage({"sos_category": category}, user_id)
-    rituals = await extract_data_from_storage("available_rituals", user_id)
+    await add_data_to_storage({MemoryKey.SOS_CATEGORY: category}, user_id)
+    rituals = await extract_data_from_storage(MemoryKey.AVAIL_RITUALS, user_id)
     if not rituals:
         await no_more_rituals(callback)
         return
@@ -121,7 +141,7 @@ async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitua
     user_id = update.from_user.id
     message = update.message if hasattr(update, "message") else update
     current_ritual_id = current_ritual.id
-    is_default_ritual = await extract_data_from_storage("is_default_last_ritual", user_id)
+    is_default_ritual = await extract_data_from_storage(MemoryKey.IS_LAST_RITUAL_DEFAULT, user_id)
 
     buttons = [
         [InlineKeyboardButton(
@@ -133,14 +153,13 @@ async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitua
     # if available USER rituals are finished, check if there are default rituals that fit params
     if len(rituals) == 0:
         if not is_default_ritual:
-            situation = await extract_data_from_storage("sos_situation", user_id)
-            category = await extract_data_from_storage("sos_category", user_id)
-            params = {"situation": situation}
+            situation = await extract_data_from_storage(MemoryKey.SOS_SITUATION, user_id)
+            category = await extract_data_from_storage(MemoryKey.SOS_CATEGORY, user_id)
+            params = {SosSearchParams.SITUATION: situation}
             if category:
-                params["category"] = category
+                params[SosSearchParams.CATEGORY] = category
             default_rituals = await get_rituals(update, is_default=True, search_params=params)
             user_rituals = await get_rituals(update, is_default=False, search_params=params)
-            # user_ritual_ids = [rit.id for rit in user_rituals]
             rituals = [rit for rit in default_rituals if rit not in user_rituals]
             if rituals:
                 buttons.extend([[InlineKeyboardButton(
@@ -154,7 +173,7 @@ async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitua
             callback_data=cat
         ) for cat in available_categories]])
 
-    await add_data_to_storage({"available_rituals": rituals}, user_id)
+    await add_data_to_storage({MemoryKey.AVAIL_RITUALS: rituals}, user_id)
 
     ans = [Bold(current_ritual.title), current_ritual.description]
     if current_ritual.url:
@@ -170,17 +189,17 @@ async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitua
 @router.callback_query(F.data == "suggest_default_ritual")
 async def show_suggested_ritual(callback: CallbackQuery):
     user_id = callback.from_user.id
-    rituals = await extract_data_from_storage("available_rituals", user_id)
+    rituals = await extract_data_from_storage(MemoryKey.AVAIL_RITUALS, user_id)
     if not rituals:
         await no_more_rituals(callback)
         return
     current_ritual = rituals.pop()
-    await add_data_to_storage({"is_default_last_ritual": True}, user_id)
+    await add_data_to_storage({MemoryKey.IS_LAST_RITUAL_DEFAULT: True}, user_id)
     await callback.message.answer(text="Sure! Here's one:")
     await get_and_show_ritual(rituals, current_ritual, callback)
 
 
-@router.callback_query(F.data.regexp(r"add_sos_3\d{18}"))
+@router.callback_query(F.data.regexp(rf"add_sos_{SOS_ID_REGEXP}"))
 async def add_default_ritual_to_fav(callback: CallbackQuery):
     ritual_id = callback.data.split("_")[-1]
     url = get_base_url(router="default_sos_ritual")
@@ -204,7 +223,7 @@ async def add_default_ritual_to_fav(callback: CallbackQuery):
         await error(callback.message)
 
 
-@router.callback_query(F.data.regexp(r"journal_sos_3\d{18}"))
+@router.callback_query(F.data.regexp(rf"journal_sos_{SOS_ID_REGEXP}"))
 # TODO some FSM state?
 async def get_journal_entry_for_ritual(callback: CallbackQuery, state: FSMContext):
     await not_implemented(callback)
