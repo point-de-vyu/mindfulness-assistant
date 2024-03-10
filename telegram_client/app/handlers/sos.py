@@ -214,6 +214,11 @@ async def add_default_ritual_to_fav(callback: CallbackQuery):
             text=f"Ritual added! Next time you'll see it among the first ones",
             reply_markup=ReplyKeyboardRemove()
         )
+        # add a checkmark to the button when added, its position is hardcoded :(
+        markup = callback.message.reply_markup.inline_keyboard
+        markup[1] = [InlineKeyboardButton(text="Add to favourites ✅", callback_data=f"add_sos_{ritual_id}")]
+        await callback.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=markup))
+
     elif status_code == 409:
         await callback.answer(
             text="This one is already in your favourites",
