@@ -16,25 +16,27 @@ from telegram_client.app.utils.storage import extract_data_from_storage, add_dat
 from telegram_client.app.schemes.sos_rituals import SosRitual
 from telegram_client.app.utils.types import Update
 
+from aiogram.utils.formatting import Bold, TextLink, as_list
+
 
 router = Router()
 
 
-@router.message(Command("sos"))
-async def clear_memory_vars(message: Message):
-    user_id = message.from_user.id
+async def clear_memory_vars(user_id: int):
     await delete_key_from_storage("sos_situation", user_id)
     await delete_key_from_storage("sos_category", user_id)
     await delete_key_from_storage("available_rituals", user_id)
     await delete_key_from_storage("is_default_last_ritual", user_id)
-    await show_sos_situations(message)
 
 
+@router.message(Command("sos"))
 async def show_sos_situations(message: Message):
+    user_id = message.from_user.id
+    await clear_memory_vars(user_id)
     url = get_base_url(router="sos_situations")
-    response = requests.get(url=url, headers=get_headers(message.from_user.id))
+    response = requests.get(url=url, headers=get_headers(user_id))
     status_code = response.status_code
-    if status_code == 200:
+    if status_code == 200 and response.json():
         situations = response.json()
         buttons = [KeyboardButton(text=sit) for sit in situations]
         ans = "What are you dealing with?"
@@ -90,11 +92,7 @@ async def get_rituals_for_situation(message: Message):
     }
     logging.debug(f"{current_ritual=}, {rituals=}")
     await add_data_to_storage(data, message.from_user.id)
-    await get_and_show_ritual(
-        rituals,
-        current_ritual,
-        message
-    )
+    await get_and_show_ritual(rituals, current_ritual, message)
 
 
 async def no_more_rituals(callback: CallbackQuery):
@@ -127,13 +125,12 @@ async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitua
 
     buttons = [
         [InlineKeyboardButton(
-            text="Journal your feelings after the exercise",
+            text="Completed? Journal your experience",
             callback_data=f"journal_sos_{current_ritual_id}"
         )]]
     if is_default_ritual:
         buttons.append([InlineKeyboardButton(text="Add to favourites", callback_data=f"add_sos_{current_ritual_id}")])
-    # if avail USER rituals are finished
-    # check if there are default rituals that fit params
+    # if available USER rituals are finished, check if there are default rituals that fit params
     if len(rituals) == 0:
         if not is_default_ritual:
             situation = await extract_data_from_storage("sos_situation", user_id)
@@ -143,21 +140,28 @@ async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitua
                 params["category"] = category
             default_rituals = await get_rituals(update, is_default=True, search_params=params)
             user_rituals = await get_rituals(update, is_default=False, search_params=params)
-            user_ritual_ids = [rit.id for rit in user_rituals]
-            rituals = [rit for rit in default_rituals if rit.id not in user_ritual_ids]
+            # user_ritual_ids = [rit.id for rit in user_rituals]
+            rituals = [rit for rit in default_rituals if rit not in user_rituals]
             if rituals:
-                buttons.extend([[InlineKeyboardButton(text="Suggest more rituals",
-                                                  callback_data="suggest_default_ritual")]])
+                buttons.extend([[InlineKeyboardButton(
+                    text="Suggest more rituals",
+                    callback_data="suggest_default_ritual")]]
+                )
     else:
         available_categories = list(set([ritual.category for ritual in rituals]))
         buttons.extend([[InlineKeyboardButton(
-            text=f"More: {cat}",
+            text=f"More: {cat.lower()}",
             callback_data=cat
         ) for cat in available_categories]])
 
     await add_data_to_storage({"available_rituals": rituals}, user_id)
+
+    ans = [Bold(current_ritual.title), current_ritual.description]
+    if current_ritual.url:
+        ans.append(TextLink("Open link", url=current_ritual.url))
+
     await message.answer(
-        text=f"<b>{current_ritual.title}</b>\n\n{current_ritual.description}\n\n{current_ritual.url}",
+        text=as_list(*ans, sep="\n\n").as_html(),
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
@@ -188,7 +192,7 @@ async def add_default_ritual_to_fav(callback: CallbackQuery):
     status_code = response.status_code
     if status_code == 200:
         await callback.answer(
-            text=f"Added this ritual {ritual_id=}! Next time you'll see it among the first ones",
+            text=f"Ritual added! Next time you'll see it among the first ones",
             reply_markup=ReplyKeyboardRemove()
         )
     elif status_code == 409:
