@@ -5,40 +5,41 @@ from typing import Dict, List
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton,\
     InlineKeyboardButton, InlineKeyboardMarkup
-from telegram_client.app.utils.requests import get_headers
+from telegram_client.app.utils.requests import get_headers, get_base_url
 import requests
-import os
 import random
 import logging
 from telegram_client.app.handlers.sign_up import forbidden_need_signing_up
 from telegram_client.app.handlers.error import error
 from telegram_client.app.handlers.not_implemented import not_implemented
-from telegram_client.app.utils.storage import extract_data_from_storage, add_data_to_storage
+from telegram_client.app.utils.storage import extract_data_from_storage, add_data_to_storage, delete_key_from_storage
 from telegram_client.app.schemes.sos_rituals import SosRitual
 from telegram_client.app.utils.types import Update
 
 
 router = Router()
-API_ENDPOINT = os.environ["API_ENDPOINT"]
 
 
 @router.message(Command("sos"))
+async def clear_memory_vars(message: Message):
+    user_id = message.from_user.id
+    await delete_key_from_storage("sos_situation", user_id)
+    await delete_key_from_storage("sos_category", user_id)
+    await delete_key_from_storage("available_rituals", user_id)
+    await delete_key_from_storage("is_default_last_ritual", user_id)
+    await show_sos_situations(message)
+
+
 async def show_sos_situations(message: Message):
-    url = f"http://{API_ENDPOINT}/sos_situations/"
-    user = message.from_user
-    user_id = str(user.id)
-    headers = get_headers(user_id)
-    response = requests.get(url=url, headers=headers)
+    url = get_base_url(router="sos_situations")
+    response = requests.get(url=url, headers=get_headers(message.from_user.id))
     status_code = response.status_code
     if status_code == 200:
         situations = response.json()
         buttons = [KeyboardButton(text=sit) for sit in situations]
         ans = "What are you dealing with?"
         keyboard = ReplyKeyboardMarkup(keyboard=[buttons], resize_keyboard=True, one_time_keyboard=True)
-        await message.answer(
-            text=ans,
-            reply_markup=keyboard
-        )
+        await message.answer(text=ans, reply_markup=keyboard)
     elif status_code == 401:
         await forbidden_need_signing_up(message)
     else:
@@ -47,29 +48,11 @@ async def show_sos_situations(message: Message):
         await error(message)
 
 
-async def get_rituals(
-        update: Update,
-        is_default: bool,
-        search_params: Dict[str, str]
-) -> List[SosRitual] | None:
-    user_id = update.from_user.id
+async def get_rituals(update: Update, is_default: bool, search_params: Dict[str, str]) -> List[SosRitual] | None:
     message = update.message if hasattr(update, "message") else update
-    headers = get_headers(str(user_id))
     route = "sos_defaults" if is_default else "sos_rituals"
-    url = f"http://{API_ENDPOINT}/{route}/?"
-    if not search_params:
-        await error(message)
-        return
-    # if "situation" in search_params:
-    #     url += f"?situation={search_params['situation']}"
-    # if "category" in search_params:
-    #     url += f"?category={search_params['category']}"
-    str_params = []
-    for key in search_params:
-        str_params.append(f"{key}={search_params[key]}")
-    url += "&".join(str_params)
-
-    response = requests.get(url=url, headers=headers)
+    url = get_base_url(router=route)
+    response = requests.get(url=url, params=search_params, headers=get_headers(update.from_user.id))
     status_code = response.status_code
 
     # TODO return {code: int, res: []} - check for this code in handler and go to error from there
@@ -133,18 +116,10 @@ async def get_ritual_for_category(callback: CallbackQuery):
 
     current_ritual = [ritual for ritual in rituals if ritual.category == category][0]
     rituals.remove(current_ritual)
-    await get_and_show_ritual(
-        rituals,
-        current_ritual,
-        callback
-    )
+    await get_and_show_ritual(rituals, current_ritual, callback)
 
 
-async def get_and_show_ritual(
-        rituals: List[SosRitual],
-        current_ritual: SosRitual,
-        update: Update
-):
+async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitual, update: Update):
     user_id = update.from_user.id
     message = update.message if hasattr(update, "message") else update
     current_ritual_id = current_ritual.id
@@ -163,9 +138,7 @@ async def get_and_show_ritual(
         if not is_default_ritual:
             situation = await extract_data_from_storage("sos_situation", user_id)
             category = await extract_data_from_storage("sos_category", user_id)
-            params = {
-                "situation": situation
-            }
+            params = {"situation": situation}
             if category:
                 params["category"] = category
             default_rituals = await get_rituals(update, is_default=True, search_params=params)
@@ -182,7 +155,7 @@ async def get_and_show_ritual(
             callback_data=cat
         ) for cat in available_categories]])
 
-    await add_data_to_storage({"current_ritual": current_ritual, "available_rituals": rituals}, user_id)
+    await add_data_to_storage({"available_rituals": rituals}, user_id)
     await message.answer(
         text=f"<b>{current_ritual.title}</b>\n\n{current_ritual.description}\n\n{current_ritual.url}",
         parse_mode=ParseMode.HTML,
@@ -200,21 +173,17 @@ async def show_suggested_ritual(callback: CallbackQuery):
     current_ritual = rituals.pop()
     await add_data_to_storage({"is_default_last_ritual": True}, user_id)
     await callback.message.answer(text="Sure! Here's one:")
-    await get_and_show_ritual(
-        rituals,
-        current_ritual,
-        callback
-    )
+    await get_and_show_ritual(rituals, current_ritual, callback)
 
 
 @router.callback_query(F.data.regexp(r"add_sos_3\d{18}"))
 async def add_default_ritual_to_fav(callback: CallbackQuery):
-    user_id = callback.from_user.id
     ritual_id = callback.data.split("_")[-1]
-    headers = get_headers(str(user_id))
+    url = get_base_url(router="default_sos_ritual")
     response = requests.post(
-        url=f"http://{API_ENDPOINT}/default_sos_ritual/?default_ritual_id={ritual_id}",
-        headers=headers
+        url=url,
+        params={"default_ritual_id": ritual_id},
+        headers=get_headers(callback.from_user.id)
     )
     status_code = response.status_code
     if status_code == 200:

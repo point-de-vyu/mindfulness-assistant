@@ -25,5 +25,18 @@ async def extract_data_from_storage(key: str, user_id: int, storage=memory_stora
     data = await storage.get_data(key=storage_key)
     logging.debug(f"extracting {storage_key.__repr__()}, {data=}")
     if key not in data:
-        return ""
+        return None
     return data[key]
+
+
+async def delete_key_from_storage(key: str, user_id: int, storage=memory_storage) -> Any:
+    storage_key = await get_storage_key(user_id)
+    data = await storage.get_data(key=storage_key)
+    if key not in data:
+        return None
+
+    key_data = data[key]
+    del data[key]
+    await storage.set_data(key=storage_key, data=data)
+    return key_data
+

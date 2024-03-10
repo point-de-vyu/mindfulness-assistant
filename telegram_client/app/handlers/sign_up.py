@@ -1,7 +1,7 @@
-import os
 import requests
 import logging
 from telegram_client.app.handlers.error import error
+from telegram_client.app.utils.requests import get_headers, get_base_url
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -18,12 +18,9 @@ async def sign_up(callback: CallbackQuery):
         "username": user.username,
         "id_from_client": user.id
     }
-    endpoint = os.environ["API_ENDPOINT"]
-    url = f"http://{endpoint}/users/"
-    token = os.environ["API_AUTH_TOKEN"]
-    headers = {"client-token": token}
+    url = get_base_url(router="users")
+    headers = get_headers(callback.from_user.id)
     response = requests.post(url=url, headers=headers, json=new_user)
-    logging.debug(response.json())
     status_code = response.status_code
     if status_code == 200:
         text = "You are registered!"
