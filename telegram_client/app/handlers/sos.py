@@ -1,7 +1,7 @@
 from aiogram import F, Router
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
-from typing import Dict, List
+from typing import Dict, List, Any
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton,\
     InlineKeyboardButton, InlineKeyboardMarkup
@@ -16,8 +16,8 @@ from telegram_client.app.handlers.not_implemented import not_implemented
 from telegram_client.app.utils.storage import extract_data_from_storage, add_data_to_storage, delete_key_from_storage
 from telegram_client.app.schemes.sos_rituals import SosRitual
 from telegram_client.app.utils.types import Update
-from aiogram.utils.formatting import Bold, TextLink, as_list
-
+from aiogram.utils.formatting import Bold, TextLink, as_list, as_key_value
+from pydantic import BaseModel
 
 router = Router()
 
@@ -41,6 +41,12 @@ class SosSearchParams(str, Enum):
 
     def __str__(self):
         return self.value
+
+
+class RequestResult(BaseModel):
+    status_code: int
+    detail: str
+    data: Any
 
     
 async def clear_memory_vars(user_id: int):
@@ -71,40 +77,41 @@ async def show_sos_situations(message: Message):
         await error(message)
 
 
-async def get_rituals(update: Update, is_default: bool, search_params: Dict[str, str]) -> List[SosRitual] | None:
-    message = update.message if hasattr(update, "message") else update
+async def get_rituals(user_id: int, is_default: bool, search_params: Dict[str, str]) -> RequestResult:
     route = "sos_defaults" if is_default else "sos_rituals"
-    url = get_base_url(router=route)
-    response = requests.get(url=url, params=search_params, headers=get_headers(update.from_user.id))
-    status_code = response.status_code
-
-    # TODO return {code: int, res: []} - check for this code in handler and go to error from there
-    if status_code != 200:
-        await error(message)
-        return
-
-    rituals = [SosRitual(**rit) for rit in response.json()]
-    random.shuffle(rituals)
-    return rituals
+    response = requests.get(url=get_base_url(router=route), params=search_params, headers=get_headers(user_id))
+    if response.status_code != 200:
+        rituals = []
+        error_detail = response.json()["detail"] if "detail" in response.json() else ""
+    else:
+        rituals = [SosRitual(**rit) for rit in response.json()]
+        random.shuffle(rituals)
+        error_detail = ""
+    res = RequestResult(status_code=response.status_code, detail=error_detail, data=rituals)
+    return res
 
 
 @router.message(F.text.lower().in_({"anger", "anxiety", "stress"}))
 async def get_rituals_for_situation(message: Message):
     situation = message.text
+    user_id = message.from_user.id
     params = {SosSearchParams.SITUATION: situation}
-    rituals = await get_rituals(message, is_default=False, search_params=params)
+    # TODO status code checks
+    res = await get_rituals(user_id, is_default=False, search_params=params)
+    if res.status_code != 200:
+        await error(message)
+        return
     is_default_last_ritual = False
-    if not rituals:
-        default_rituals = await get_rituals(message, is_default=True, search_params=params)
-        if not default_rituals:
+    if not res.data:
+        res = await get_rituals(user_id, is_default=True, search_params=params)
+        if res.status_code != 200 or not res.data:
             await error(message)
             return
-        rituals = default_rituals
         is_default_last_ritual = True
         await message.answer(
             text=f"You haven't added or created your {situation.lower()} rituals. Here's my suggestion:"
         )
-
+    rituals = res.data
     current_ritual = rituals.pop()
     data = {
         MemoryKey.AVAIL_RITUALS: rituals,
@@ -117,7 +124,7 @@ async def get_rituals_for_situation(message: Message):
 
 async def no_more_rituals(callback: CallbackQuery):
     await callback.message.answer(
-        text="I'm afraid there's no more. Use the /sos command to restart this flow",
+        text="I'm afraid there's no more",
         reply_markup=ReplyKeyboardRemove()
     )
 
@@ -130,6 +137,7 @@ async def get_ritual_for_category(callback: CallbackQuery):
     rituals = await extract_data_from_storage(MemoryKey.AVAIL_RITUALS, user_id)
     if not rituals:
         await no_more_rituals(callback)
+        await callback.message.answer(text="Use the /sos command to restart the flow")
         return
 
     current_ritual = [ritual for ritual in rituals if ritual.category == category][0]
@@ -158,8 +166,11 @@ async def get_and_show_ritual(rituals: List[SosRitual], current_ritual: SosRitua
             params = {SosSearchParams.SITUATION: situation}
             if category:
                 params[SosSearchParams.CATEGORY] = category
-            default_rituals = await get_rituals(update, is_default=True, search_params=params)
-            user_rituals = await get_rituals(update, is_default=False, search_params=params)
+
+            def_res = await get_rituals(user_id, is_default=True, search_params=params)
+            user_res = await get_rituals(user_id, is_default=False, search_params=params)
+            default_rituals = def_res.data
+            user_rituals = user_res.data
             rituals = [rit for rit in default_rituals if rit not in user_rituals]
             if rituals:
                 buttons.extend([[InlineKeyboardButton(
@@ -232,3 +243,83 @@ async def add_default_ritual_to_fav(callback: CallbackQuery):
 # TODO some FSM state?
 async def get_journal_entry_for_ritual(callback: CallbackQuery, state: FSMContext):
     await not_implemented(callback)
+
+
+@router.message(Command("my_rituals"))
+async def get_all_user_rituals(message: Message):
+    user_id = message.from_user.id
+    res = await get_rituals(user_id, is_default=False, search_params={})
+    if res.status_code == 401:
+        await forbidden_need_signing_up(message)
+        return
+    if res.status_code != 200:
+        logging.error(res.detail)
+        await error(message)
+        return
+    rituals = res.data
+    if not rituals:
+        await message.answer(text="You haven't got any rituals of yours")
+        return
+
+    current_ritual = rituals.pop()
+    await show_ritual_full_info(rituals, current_ritual, message)
+
+
+async def show_ritual_full_info(rituals: List[SosRitual], current_ritual: SosRitual, update: Update):
+    user_id = update.from_user.id
+    message = update.message if hasattr(update, "message") else update
+
+    await add_data_to_storage({MemoryKey.AVAIL_RITUALS: rituals}, user_id)
+    button_row = [InlineKeyboardButton(
+        text="Delete",
+        callback_data=f"delete_sos_{current_ritual.id}"
+    )]
+    if rituals:
+        button_row.append(InlineKeyboardButton(text="Next", callback_data="show_next_full_ritual"))
+    buttons = [button_row]
+
+    ans = [
+        Bold(current_ritual.title),
+        as_list(
+            as_key_value("🧘Type", current_ritual.category.lower()),
+            as_key_value("🤍What for", current_ritual.situation.lower()),
+            as_key_value("📝Description", current_ritual.description.lower())
+        )
+    ]
+    if current_ritual.url:
+        ans.append(TextLink("Open link", url=current_ritual.url))
+
+    await message.answer(
+        text=as_list(*ans, sep="\n\n").as_html(),
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+
+
+@router.callback_query(F.data.regexp(rf"delete_sos_{SOS_ID_REGEXP}"))
+async def delete_ritual_from_fav(callback: CallbackQuery):
+    ritual_id = callback.data.split("_")[-1]
+    url = f"{get_base_url(router='/sos_rituals/')}{ritual_id}"
+    response = requests.delete(url=url, headers=get_headers(callback.from_user.id))
+    if response.status_code == 404:
+        await callback.answer(text="You already deleted this ritual!")
+        return
+    if response.status_code != 200:
+        await error(callback.message)
+        return
+
+    # add a checkmark to the button when added, its position is hardcoded :(
+    markup = callback.message.reply_markup.inline_keyboard
+    markup[0][0] = InlineKeyboardButton(text="Delete ✅", callback_data=f"delete_sos_{ritual_id}")
+    await callback.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=markup))
+    await callback.answer(text="Successfully deleted this ritual from your favourites!")
+
+
+@router.callback_query(F.data == "show_next_full_ritual")
+async def get_next_full_ritual(callback: CallbackQuery):
+    rituals = await extract_data_from_storage(MemoryKey.AVAIL_RITUALS, callback.from_user.id)
+    if not rituals:
+        await no_more_rituals(callback)
+        return
+    current_ritual = rituals.pop()
+    await show_ritual_full_info(rituals, current_ritual, callback)
