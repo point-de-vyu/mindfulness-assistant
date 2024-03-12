@@ -14,7 +14,8 @@ def get_postgres_engine_for_testing() -> sqlalchemy.engine.Engine:
 
 
 class AssistantApi(TestClient):
-    auth_token: str
+    client_auth_token: str
+    user_id: str
 
     """
     Added authenticated methods and DB resetting upon inition.
@@ -25,30 +26,32 @@ class AssistantApi(TestClient):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         engine = get_postgres_engine_for_testing()
+        self.client_auth_token = os.environ["TEST_CLIENT_AUTH_TOKEN"]
         with engine.connect() as connection:
             self._reset_db(connection)
+            self._add_authorised_client(connection)
             self._add_default_test_user(connection)
         connection.close()
 
     def _get_auth_headers(self, token: str | None = None, id: str | None = None):
-        token = token or self.auth_token
-        id = id or self.id
+        token = token or self.client_auth_token
+        id = id or self.user_id
         return {"client-token": token, "id_from_client": id}
 
-    def get_with_auth(self, url: str, auth_token: str | None = None) -> Response:
-        return self.get(url=url, headers=self._get_auth_headers(auth_token))
+    def get_with_auth(self, url: str, auth_token: str | None = None, id: str | None = None) -> Response:
+        return self.get(url=url, headers=self._get_auth_headers(auth_token, id))
 
-    def post_with_auth(self, url: str, content: str | None = None, auth_token: str | None = None) -> Response:
+    def post_with_auth(self, url: str, content: str | None = None, auth_token: str | None = None, id: str | None = None) -> Response:
         return self.post(
             url=url,
             content=content,
-            headers=self._get_auth_headers(auth_token),
+            headers=self._get_auth_headers(auth_token, id),
         )
 
-    def delete_with_auth(self, url: str, auth_token: str | None = None) -> Response:
+    def delete_with_auth(self, url: str, auth_token: str | None = None, id: str | None = None) -> Response:
         return self.delete(
             url=url,
-            headers=self._get_auth_headers(auth_token),
+            headers=self._get_auth_headers(auth_token, id),
         )
 
     @staticmethod
@@ -56,31 +59,38 @@ class AssistantApi(TestClient):
         """
         Deleting from users table will cascade to all tables where user_id is a FK.
         """
+        connection.execute(sqlalchemy.text("DELETE FROM clients_users;"))
+        connection.execute(sqlalchemy.text("DELETE FROM clients;"))
         connection.execute(sqlalchemy.text("DELETE FROM users;"))
         connection.execute(sqlalchemy.text(f"DELETE FROM {SosTable.RITUALS} "
                                            f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});")
                            )
         connection.commit()
 
+    def _add_authorised_client(self, connection: sqlalchemy.Connection) -> None:
+        client_id = os.environ["TEST_CLIENT_ID"]
+        client_type_id = os.environ["TEST_CLIENT_TYPE_ID"]
+        token = self.client_auth_token
+        connection.execute(sqlalchemy.text(f"INSERT INTO clients VALUES("
+                                           f"{client_id}, {client_type_id}, '{token}');")
+                           )
+
     def _add_default_test_user(self, connection: sqlalchemy.Connection) -> None:
         username = os.environ["TEST_USERNAME"]
         first_name = os.environ["TEST_FIRSTNAME"]
         last_name = os.environ["TEST_LASTNAME"]
-        # TODO add and test
-        id = os.environ["TEST_ID"]
         client_id = os.environ["TEST_CLIENT_ID"]
-        token = os.environ["TEST_USER_AUTH_TOKEN"]
+        user_id = os.environ["TEST_USER_ID"]
         connection.execute(sqlalchemy.func.add_new_user(
             username,
             first_name,
             last_name,
             client_id,
-            id
+            user_id
             )
         )
         connection.commit()
-        self.auth_token = token
-        self.id = id
+        self.user_id = user_id
 
 
 @pytest.fixture(scope="session")

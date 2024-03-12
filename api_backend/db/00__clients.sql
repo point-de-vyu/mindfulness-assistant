@@ -21,6 +21,6 @@ CREATE TABLE IF NOT EXISTS clients_users (
     user_id_from_client BIGINT,
     user_id BIGINT,
     PRIMARY KEY(client_id, user_id_from_client),
-    FOREIGN KEY (client_id) REFERENCES clients(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (client_id) REFERENCES clients(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
