@@ -17,9 +17,9 @@ from telegram_client.app.schemes.sos_rituals import SosRitual
 
 from telegram_client.app.handlers.sign_up import forbidden_need_signing_up
 from telegram_client.app.handlers.error import error
-from telegram_client.app.handlers.sos_.static_data import MemoryKey, SOS_ID_REGEXP
-from telegram_client.app.handlers.sos_.request_wraps import get_rituals
-from telegram_client.app.handlers.sos_.common_handlers import no_more_rituals
+from telegram_client.app.handlers.sos.static_data import MemoryKey, SOS_ID_REGEXP
+from telegram_client.app.handlers.sos.request_wraps import get_rituals
+from telegram_client.app.handlers.sos.common_handlers import no_more_rituals
 
 
 router = Router()
