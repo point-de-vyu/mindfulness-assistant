@@ -15,13 +15,15 @@ def test_unauth_request(api: AssistantApi) -> None:
 
 def test_no_token_header(api: AssistantApi) -> None:
     user_id = os.environ["TEST_USER_ID"]
-    response = api.get(url="/v1/sos_categories/", headers={"id_from_client": user_id})
+    id_header = os.environ["HEADER_NAME_USER_ID"]
+    response = api.get(url="/v1/sos_categories/", headers={id_header: user_id})
     assert response.status_code == 422
 
 
 def test_no_id_header(api: AssistantApi) -> None:
     client_token = os.environ["TEST_CLIENT_AUTH_TOKEN"]
-    response = api.get(url="/v1/sos_categories/", headers={"client-token": client_token})
+    token_header = os.environ["HEADER_NAME_TOKEN"]
+    response = api.get(url="/v1/sos_categories/", headers={token_header: client_token})
     assert response.status_code == 422
 
 

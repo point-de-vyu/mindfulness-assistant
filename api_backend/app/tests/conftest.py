@@ -36,7 +36,9 @@ class AssistantApi(TestClient):
     def _get_auth_headers(self, token: str | None = None, user_id: int | None = None):
         token = token or self.client_auth_token
         user_id = str(user_id) if user_id else str(self.user_id)
-        return {"client-token": token, "id_from_client": user_id}
+        token_header = os.environ["HEADER_NAME_TOKEN"]
+        id_header = os.environ["HEADER_NAME_USER_ID"]
+        return {token_header: token, id_header: user_id}
 
     def get_with_auth(self, url: str, auth_token: str | None = None, user_id: int | None = None) -> Response:
         return self.get(url=url, headers=self._get_auth_headers(auth_token, user_id))

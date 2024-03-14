@@ -1,5 +1,6 @@
 import secrets
 import sqlalchemy
+import os
 from fastapi import Depends
 from fastapi import Header
 from api_backend.app.utils.db import get_postgres_engine
@@ -11,8 +12,7 @@ def generate_token() -> str:
 
 
 def client_authentication(
-        # todo подумать об имени либо другой способ
-        token: str = Header(alias="client-token"),
+        token: str = Header(alias=os.environ["HEADER_NAME_TOKEN"]),
         db_engine: sqlalchemy.Engine = Depends(get_postgres_engine)
 ) -> int:
     conn = db_engine.connect()
@@ -25,8 +25,8 @@ def client_authentication(
 
 
 def authentication(
-    user_id_from_client: str = Header(alias="id_from_client"),
-    token: str = Header(alias="client-token"),
+    user_id_from_client: str = Header(alias=os.environ["HEADER_NAME_USER_ID"]),
+    token: str = Header(alias=os.environ["HEADER_NAME_TOKEN"]),
     db_engine: sqlalchemy.Engine = Depends(get_postgres_engine)
 ) -> int:
     user_id_from_client = int(user_id_from_client)
@@ -41,5 +41,3 @@ def authentication(
     if not user_id:
         raise_401_error()
     return user_id
-
-print(generate_token())
