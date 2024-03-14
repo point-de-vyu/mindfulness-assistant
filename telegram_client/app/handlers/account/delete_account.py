@@ -17,6 +17,19 @@ class DeleteAcc(StatesGroup):
 
 @router.message(Command("delete_account"))
 async def delete_account(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    get_user = requests.get(url=get_base_url(router="users"), headers=get_headers(user_id))
+    status_code = get_user.status_code
+    if status_code == 401:
+        await message.answer(
+            text="Nothing to delete: either you haven't yet created your profile or it has already been deleted",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return
+    if status_code != 200:
+        await error(message)
+        return
+
     await state.set_state(DeleteAcc.confirming_acc_deletion)
     await message.answer(
         text="I will proceed to delete your account and all of your data. Are you sure?",
@@ -32,8 +45,6 @@ async def confirmed_deleting_account(message: Message, state: FSMContext):
     status_code = delete_response.status_code
     if status_code == 200:
         text = "Your account and all of your data has been deleted. You can delete chat history too, if you wish"
-    elif status_code == 401:
-        text = "Nothing to delete: either you haven't yet created your profile or it has already been deleted"
     else:
         await error(message)
         return
