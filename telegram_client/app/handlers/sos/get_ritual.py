@@ -1,4 +1,4 @@
-from typing import Dict, List, Any
+from typing import List
 import requests
 import logging
 
@@ -16,7 +16,7 @@ from telegram_client.app.utils.storage import extract_data_from_storage, add_dat
 from telegram_client.app.utils.types import Update
 from telegram_client.app.schemes.sos_rituals import SosRitual
 
-from telegram_client.app.handlers.sign_up import forbidden_need_signing_up
+from telegram_client.app.handlers.account.sign_up import forbidden_need_signing_up
 from telegram_client.app.handlers.error import error
 from telegram_client.app.handlers.not_implemented import not_implemented
 from telegram_client.app.handlers.sos.static_data import MemoryKey, SosSearchParams, SOS_ID_REGEXP
