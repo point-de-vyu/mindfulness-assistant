@@ -41,9 +41,9 @@ def get_categories(
 )
 def get_situations(
     sos_mng: SosMngDep,
-    client_id: int = Depends(client_authentication)
+    user_id: int = Depends(authentication),
 ) -> List[str]:
-    # logger.info(f"{user_id=} getting available sos situations")
+    logger.info(f"{user_id=} getting available sos situations")
     result = sos_mng.get_available_situations()
     return result
 
