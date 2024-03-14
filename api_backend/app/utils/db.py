@@ -14,11 +14,10 @@ def get_db_connection_parameters():
     return endpoint, main_db, username, password
 
 
-# TODO change back name
 def get_db_url(db_name: str | None = None) -> str:
     db_endpoint, main_db_name, db_username, db_password = get_db_connection_parameters()
     db_name = db_name or main_db_name
-    db_name = "example"
+    # db_name = "example"
     return f"postgresql+psycopg2://{db_username}:{db_password}@{db_endpoint}/{db_name}"
 
 
