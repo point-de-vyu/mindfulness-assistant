@@ -7,7 +7,7 @@ import logging
 
 async def get_storage_key(user_id: int) -> StorageKey:
     return StorageKey(
-        bot_id=int(os.environ["DEBUG_BOT_ID"]),
+        bot_id=int(os.environ["BOT_ID"]),
         chat_id=user_id,
         user_id=user_id
     )

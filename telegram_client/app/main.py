@@ -13,7 +13,7 @@ memory_storage = MemoryStorage()
 
 
 async def main():
-    bot = Bot(token=os.environ["DEBUG_BOT_TOKEN"])
+    bot = Bot(token=os.environ["BOT_TOKEN"])
     logging.basicConfig(level=logging.DEBUG)
     dispatcher = Dispatcher(storage=MemoryStorage())
     dispatcher.include_router(start.router)
