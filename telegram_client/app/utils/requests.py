@@ -3,7 +3,7 @@ import os
 
 
 def get_headers(user_id: str | int) -> dict:
-    token_header = os.environ["HEADER_NAME_USER_ID"]
+    token_header = os.environ["HEADER_NAME_TOKEN"]
     id_header = os.environ["HEADER_NAME_USER_ID"]
     user_id = str(user_id)
     token = os.environ["API_AUTH_TOKEN"]
