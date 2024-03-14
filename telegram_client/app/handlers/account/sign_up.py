@@ -22,6 +22,7 @@ async def sign_up(callback: CallbackQuery):
     headers = get_headers(callback.from_user.id)
     response = requests.post(url=url, headers=headers, json=new_user)
     status_code = response.status_code
+    new_markup = [[InlineKeyboardButton(text="Signed up ✅", callback_data=f"sign_up")]]
     if status_code == 200:
         text = "You are registered!"
     elif status_code == 409:
@@ -29,8 +30,8 @@ async def sign_up(callback: CallbackQuery):
     else:
         await error(callback.message)
         return
-
-    await callback.message.answer(text=text)
+    await callback.message.edit_text(text)
+    await callback.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=new_markup))
 
 
 async def explain_signing_up(message: Message):
