@@ -33,7 +33,7 @@ async def confirmed_deleting_account(message: Message, state: FSMContext):
     if status_code == 200:
         text = "Your account and all of your data has been deleted. You can delete chat history too, if you wish"
     elif status_code == 401:
-        text = "Don't worry, your account has been deleted for good"
+        text = "Nothing to delete: either you haven't yet created your profile or it has already been deleted"
     else:
         await error(message)
         return
