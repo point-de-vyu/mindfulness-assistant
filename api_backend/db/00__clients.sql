@@ -3,8 +3,6 @@ CREATE TABLE IF NOT EXISTS client_types(
     name VARCHAR(30) UNIQUE NOT NULL
 );
 
-INSERT INTO client_types(id, name) VALUES (1, 'telegram'), (2, 'web');
-
 -- 100+ for telegram
 -- 200+ for web
 CREATE TABLE IF NOT EXISTS clients(

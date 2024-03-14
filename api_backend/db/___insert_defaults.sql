@@ -1,3 +1,5 @@
+INSERT INTO client_types(id, name) VALUES (1, 'telegram'), (2, 'web');
+
 -- ADD default data: categories, situations, default rituals
 
 INSERT INTO sos_situations (id, name) VALUES

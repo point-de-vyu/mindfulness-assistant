@@ -1,9 +1,8 @@
 import sqlalchemy
 from api_backend.app.schemes.user import User, UserToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
-from api_backend.app import auth
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict
 
 
 class UserManager:
@@ -72,13 +71,9 @@ class UserManager:
         return User(**rows[0]._asdict())
 
     def delete_user(self, user_id: int) -> bool:
-        # TODO: все удаление каскадируется, но не удалятся кастомные штуки, созданные юзером.
-        #  Плюс далее будут еще их штуки: надо кастом функцию написать
-        query = sqlalchemy.delete(self.users_table).where(self.users_table.c.id == user_id)
-        executed_query = self.sql_connection.execute(query)
+        executed_query = self.sql_connection.execute(sqlalchemy.func.delete_user_data(user_id))
         self.sql_connection.commit()
-        rowcount = executed_query.rowcount
-        if rowcount != 1:
+        res = executed_query.scalar()
+        if not res:
             self.logger.critical(f"Failed to delete user with {user_id}")
-            return False
-        return True
+        return res
