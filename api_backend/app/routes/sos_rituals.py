@@ -2,7 +2,8 @@ from fastapi import APIRouter
 from fastapi import Depends
 from typing import Annotated
 from typing import List
-from api_backend.app.auth import get_user_id_by_token
+from api_backend.app.auth import authentication
+from api_backend.app.auth import client_authentication
 from api_backend.app.schemes.sos_rituals import SosRitual
 from api_backend.app.schemes.sos_rituals import SosRitualToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
@@ -26,7 +27,7 @@ SosMngDep = Annotated[SosSelfHelpManager, Depends(get_sos_manager)]
 )
 def get_categories(
         sos_mng: SosMngDep,
-        user_id: int = Depends(get_user_id_by_token)
+        user_id: int = Depends(authentication)
 ) -> List[str]:
     logger.info(f"{user_id=} getting available sos categories")
     result = sos_mng.get_available_categories()
@@ -40,9 +41,9 @@ def get_categories(
 )
 def get_situations(
     sos_mng: SosMngDep,
-    user_id: int = Depends(get_user_id_by_token)
+    client_id: int = Depends(client_authentication)
 ) -> List[str]:
-    logger.info(f"{user_id=} getting available sos situations")
+    # logger.info(f"{user_id=} getting available sos situations")
     result = sos_mng.get_available_situations()
     return result
 
@@ -57,7 +58,7 @@ def get_situations(
 )
 def get_default_sos_rituals(
     sos_mng: SosMngDep,
-    user_id: int = Depends(get_user_id_by_token),
+    user_id: int = Depends(authentication),
     category: str | None = None,
     situation: str | None = None
 ) -> List[SosRitual]:
@@ -80,7 +81,7 @@ def get_default_sos_rituals(
 )
 def get_user_rituals(
         sos_mng: SosMngDep,
-        user_id: int = Depends(get_user_id_by_token),
+        user_id: int = Depends(authentication),
         category: str | None = None,
         situation: str | None = None
 ) -> List[SosRitual]:
@@ -99,7 +100,7 @@ def get_user_rituals(
 def get_ritual_by_id(
         ritual_id: int,
         sos_mng: SosMngDep,
-        user_id: int = Depends(get_user_id_by_token)
+        user_id: int = Depends(authentication)
 ) -> SosRitual:
     ritual = sos_mng.get_user_ritual_by_id(user_id, ritual_id)
     if not ritual:
@@ -114,7 +115,7 @@ def get_ritual_by_id(
 def add_ritual_for_user(
         sos_mng: SosMngDep,
         custom_ritual: SosRitualToCreate,
-        user_id: int = Depends(get_user_id_by_token)
+        user_id: int = Depends(authentication)
 ) -> dict:
     logger.info(f"Adding a custom sos ritual for {user_id=}: {custom_ritual}")
     try:
@@ -131,7 +132,7 @@ def add_ritual_for_user(
 def add_default_ritual_for_user(
         default_ritual_id: int,
         sos_mng: SosMngDep,
-        user_id: int = Depends(get_user_id_by_token),
+        user_id: int = Depends(authentication),
 
 ) -> None:
     logger.info(f"Adding a default ritual {default_ritual_id=} for {user_id=}")
@@ -150,7 +151,7 @@ def add_default_ritual_for_user(
 def remove_ritual_for_user(
         ritual_id: int,
         sos_mng: SosMngDep,
-        user_id: int = Depends(get_user_id_by_token)
+        user_id: int = Depends(authentication)
 ) -> None:
     logger.info(f"Deleting a ritual {ritual_id=} from {user_id=}")
     try:

@@ -2,7 +2,8 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import status
 from fastapi import Depends
-from api_backend.app.auth import get_user_id_by_token
+from api_backend.app.auth import authentication
+from api_backend.app.auth import client_authentication
 from api_backend.app.logger import get_logger
 from api_backend.app.utils.mng_getters import get_user_manager
 from api_backend.app.utils.error_raisers import raise_404_error
@@ -26,17 +27,17 @@ UserMngDep = Annotated[UserManager, Depends(get_user_manager)]
 )
 def add_new_user(
         user: UserToCreate,
-        user_mng: UserMngDep
-) -> Dict[str, str]:
+        user_mng: UserMngDep,
+        client_id: int = Depends(client_authentication)
+) -> None:
     logger.info(f"Creating new user {user}")
     try:
-        id, token = user_mng.add_new_user(user)
+        id = user_mng.add_new_user(user, client_id)
     except IntegrityError:
         raise_409_error(ErrorMsg.USER_ALREADY_EXISTS)
     except RuntimeError as runt_err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
     logger.info(f"Created new user with {id=}")
-    return {"your_secret_authorization_token": token}
 
 
 @router.get(
@@ -45,7 +46,7 @@ def add_new_user(
 )
 def get_user(
     user_mng: UserMngDep,
-    user_id: int = Depends(get_user_id_by_token)
+    user_id: int = Depends(authentication)
 ) -> User:
     user = user_mng.get_by_id(user_id)
     if not user:
@@ -89,7 +90,7 @@ def get_user_by_username(
 )
 def delete_user(
         user_mng: UserMngDep,
-        user_id: int = Depends(get_user_id_by_token)
+        user_id: int = Depends(authentication)
 ) -> None:
     # мб фиг с 500? все равно клиент их получит, а так можно без трай, если пустой лист юзера - шлем ошибкку:
     logger.info(f"Deleting user data for {user_id=}")

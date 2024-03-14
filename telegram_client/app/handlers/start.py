@@ -29,3 +29,5 @@ async def greet_on_start(message: Message, state: FSMContext):
     await message.answer(
         text=function_text
     )
+
+
