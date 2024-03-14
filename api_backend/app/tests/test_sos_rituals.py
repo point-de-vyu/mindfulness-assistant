@@ -197,6 +197,7 @@ def test_add_duplicate_default_ritual_to_user(api: AssistantApi, correct_default
     # cleanup
     api.delete_with_auth(url=f"/v1/sos_rituals/{id}")
 
+
 def test_add_wrong_default_ritual_to_user(api: AssistantApi, wrong_default_ritual_id: int) -> None:
     id = wrong_default_ritual_id
     post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")

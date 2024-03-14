@@ -102,6 +102,11 @@ def api():
     yield api
 
 
+@pytest.fixture(scope="session")
+def nonexistent_user_id() -> int:
+    return 123456789
+
+
 def test_read_root(api: AssistantApi) -> None:
     response = api.get("/")
     assert response.status_code == 200

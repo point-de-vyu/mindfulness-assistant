@@ -35,8 +35,8 @@ def test_add_and_delete_user(api: AssistantApi, user_to_create: UserToCreate) ->
     assert get_response_after_deletion.status_code == 401
 
 
-def test_delete_nonexistent_user(api: AssistantApi) -> None:
+def test_delete_nonexistent_user(api: AssistantApi, nonexistent_user_id: int) -> None:
     url = "/v1/users/"
     # since we authenticate user by id, a nonexistent user is an anauthenticated user
-    delete_response = api.delete_with_auth(url=url, user_id=38072345)
+    delete_response = api.delete_with_auth(url=url, user_id=nonexistent_user_id)
     assert delete_response.status_code == 401
