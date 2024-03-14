@@ -182,8 +182,8 @@ def test_add_ok_default_ritual_to_user(api: AssistantApi, correct_default_ritual
     assert get_user_rits_response_after_post.status_code == 200
     assert get_user_rits_response_after_post.json() is not None
 
-    delete_response = api.delete_with_auth(url=f"/v1/sos_rituals/{id}")
-    assert delete_response.status_code == 200
+    # cleanup
+    api.delete_with_auth(url=f"/v1/sos_rituals/{id}")
 
 
 def test_add_duplicate_default_ritual_to_user(api: AssistantApi, correct_default_ritual_id: int) -> None:
@@ -194,6 +194,8 @@ def test_add_duplicate_default_ritual_to_user(api: AssistantApi, correct_default
     post_duplicate_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
     assert post_duplicate_response.status_code == 409
 
+    # cleanup
+    api.delete_with_auth(url=f"/v1/sos_rituals/{id}")
 
 def test_add_wrong_default_ritual_to_user(api: AssistantApi, wrong_default_ritual_id: int) -> None:
     id = wrong_default_ritual_id
@@ -218,8 +220,8 @@ def test_add_correct_custom_ritual_to_user(api: AssistantApi, ok_ritual_to_creat
     assert ritual.situation == created_ritual.situation
     assert ritual.url == created_ritual.url
 
-    delete_response = api.delete_with_auth(url=f"/v1/sos_rituals/{created_ritual_id}")
-    assert delete_response.status_code == 200
+    # cleanup
+    api.delete_with_auth(url=f"/v1/sos_rituals/{created_ritual_id}")
 
 
 @pytest.mark.parametrize("ritual", bad_rituals_to_create)

@@ -15,12 +15,12 @@ def get_postgres_engine_for_testing() -> sqlalchemy.engine.Engine:
 
 class AssistantApi(TestClient):
     client_auth_token: str
-    user_id: str
+    user_id: int
 
     """
     Added authenticated methods and DB resetting upon inition.
     This api uses default testing user.
-    If necessary, each method can take a different auth_token
+    If necessary, each method can take different id and token
     """
 
     def __init__(self, **kwargs):
@@ -33,25 +33,25 @@ class AssistantApi(TestClient):
             self._add_default_test_user(connection)
         connection.close()
 
-    def _get_auth_headers(self, token: str | None = None, id: str | None = None):
+    def _get_auth_headers(self, token: str | None = None, user_id: int | None = None):
         token = token or self.client_auth_token
-        id = id or self.user_id
-        return {"client-token": token, "id_from_client": id}
+        user_id = str(user_id) if user_id else str(self.user_id)
+        return {"client-token": token, "id_from_client": user_id}
 
-    def get_with_auth(self, url: str, auth_token: str | None = None, id: str | None = None) -> Response:
-        return self.get(url=url, headers=self._get_auth_headers(auth_token, id))
+    def get_with_auth(self, url: str, auth_token: str | None = None, user_id: int | None = None) -> Response:
+        return self.get(url=url, headers=self._get_auth_headers(auth_token, user_id))
 
-    def post_with_auth(self, url: str, content: str | None = None, auth_token: str | None = None, id: str | None = None) -> Response:
+    def post_with_auth(self, url: str, content: str | None = None, auth_token: str | None = None, user_id: int | None = None) -> Response:
         return self.post(
             url=url,
             content=content,
-            headers=self._get_auth_headers(auth_token, id),
+            headers=self._get_auth_headers(auth_token, user_id),
         )
 
-    def delete_with_auth(self, url: str, auth_token: str | None = None, id: str | None = None) -> Response:
+    def delete_with_auth(self, url: str, auth_token: str | None = None, user_id: int | None = None) -> Response:
         return self.delete(
             url=url,
-            headers=self._get_auth_headers(auth_token, id),
+            headers=self._get_auth_headers(auth_token, user_id),
         )
 
     @staticmethod
@@ -81,6 +81,7 @@ class AssistantApi(TestClient):
         last_name = os.environ["TEST_LASTNAME"]
         client_id = os.environ["TEST_CLIENT_ID"]
         user_id = os.environ["TEST_USER_ID"]
+        self.user_id = int(user_id)
         connection.execute(sqlalchemy.func.add_new_user(
             username,
             first_name,
@@ -90,7 +91,6 @@ class AssistantApi(TestClient):
             )
         )
         connection.commit()
-        self.user_id = user_id
 
 
 @pytest.fixture(scope="session")
