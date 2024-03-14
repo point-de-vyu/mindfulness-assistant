@@ -30,6 +30,6 @@ def test_unauthorized_client_token(api: AssistantApi, unauthorized_client_token:
     assert response.status_code == 401
 
 
-def test_req_by_unauthorised_user(api: AssistantApi, nonexistent_user_id: int) -> None:
+def test_unauthorised_user(api: AssistantApi, nonexistent_user_id: int) -> None:
     response = api.get_with_auth(url="/v1/sos_categories/", user_id=nonexistent_user_id)
     assert response.status_code == 401
