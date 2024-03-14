@@ -18,7 +18,6 @@ from telegram_client.app.schemes.sos_rituals import SosRitual
 
 from telegram_client.app.handlers.account.sign_up import forbidden_need_signing_up
 from telegram_client.app.handlers.error import error
-from telegram_client.app.handlers.not_implemented import not_implemented
 from telegram_client.app.handlers.sos.static_data import MemoryKey, SosSearchParams, SOS_ID_REGEXP
 from telegram_client.app.handlers.sos.request_wraps import get_rituals
 from telegram_client.app.handlers.sos.common_handlers import no_more_rituals
@@ -197,9 +196,3 @@ async def add_default_ritual_to_fav(callback: CallbackQuery, state: FSMContext):
         )
     else:
         await error(callback.message)
-
-
-@router.callback_query(F.data.regexp(rf"journal_sos_{SOS_ID_REGEXP}"))
-# TODO some FSM state?
-async def get_journal_entry_for_ritual(callback: CallbackQuery, state: FSMContext):
-    await not_implemented(callback)

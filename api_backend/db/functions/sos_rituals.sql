@@ -195,3 +195,20 @@ BEGIN
 	);
 END;
 $$;
+
+
+CREATE OR REPLACE FUNCTION add_sos_ritual_feedback(
+	_user_id BIGINT,
+	_ritual_id BIGINT,
+	_feedback TEXT
+)
+RETURNS BOOL
+LANGUAGE plpgsql
+AS $$
+DECLARE _date_logged DATE;
+BEGIN
+	_date_logged = NOW();
+	INSERT INTO user_feedback_to_ritual VALUES (_user_id, _ritual_id, _date_logged, _feedback);
+	RETURN TRUE;
+END;
+$$;

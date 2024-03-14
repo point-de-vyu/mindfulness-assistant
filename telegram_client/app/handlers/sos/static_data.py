@@ -10,6 +10,7 @@ class MemoryKey(str, Enum):
     AVAIL_RITUALS = "available_rituals"
     USR_AVAIL_RITUALS = "user_available_rituals"
     IS_LAST_RITUAL_DEFAULT = "is_last_ritual_default"
+    CURRENT_RITUAL = "current_ritual"
 
     def __str__(self):
         return self.value
