@@ -28,6 +28,7 @@ async def sign_up(callback: CallbackQuery):
         text = "You are already registered, no need to do that again :)"
     else:
         await error(callback.message)
+        return
 
     await callback.message.answer(text=text)
 
