@@ -3,12 +3,11 @@ import os
 
 
 def get_headers(user_id: str | int) -> dict:
-    # TODO
-    # token_header_title =
-    # id_header_title =
+    token_header = os.environ["HEADER_NAME_USER_ID"]
+    id_header = os.environ["HEADER_NAME_USER_ID"]
     user_id = str(user_id)
     token = os.environ["API_AUTH_TOKEN"]
-    return {"client-token": token, "id_from_client": user_id}
+    return {token_header: token, id_header: user_id}
 
 
 def get_base_url(router: str, endpoint: str = os.environ["API_ENDPOINT"]) -> str:
