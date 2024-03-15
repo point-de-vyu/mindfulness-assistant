@@ -77,6 +77,11 @@ def wrong_default_ritual_id() -> int:
     return 2000129247500863806
 
 
+@pytest.fixture()
+def sos_ritual_feedback_text() -> str:
+    return "calm and cool"
+
+
 def test_get_sos_categories(api: AssistantApi) -> None:
     response = api.get_with_auth(url="/v1/sos_categories/")
     assert response.status_code == 200
@@ -248,3 +253,28 @@ def test_delete_absent_ritual_from_user(api: AssistantApi, wrong_default_ritual_
     delete_response = api.delete_with_auth(url=f"/v1/sos_rituals/{id}")
     assert delete_response.status_code == 404
 
+
+def test_journal_feedback_for_correct_ritual_id(
+    api: AssistantApi,
+    correct_default_ritual_id: int,
+    sos_ritual_feedback_text: str
+) -> None:
+    params = {
+        "ritual_id": correct_default_ritual_id,
+        "feedback": sos_ritual_feedback_text
+    }
+    post_response = api.post_with_auth(url=f"/v1/sos_feedback/", params=params)
+    assert post_response.status_code == 200
+
+
+def test_journal_feedback_for_wrong_ritual_id(
+    api: AssistantApi,
+    wrong_default_ritual_id: int,
+    sos_ritual_feedback_text: str
+) -> None:
+    params = {
+        "ritual_id": wrong_default_ritual_id,
+        "feedback": sos_ritual_feedback_text
+    }
+    post_response = api.post_with_auth(url=f"/v1/sos_feedback/", params=params)
+    assert post_response.status_code == 400

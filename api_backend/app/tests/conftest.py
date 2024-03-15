@@ -43,10 +43,18 @@ class AssistantApi(TestClient):
     def get_with_auth(self, url: str, auth_token: str | None = None, user_id: int | None = None) -> Response:
         return self.get(url=url, headers=self._get_auth_headers(auth_token, user_id))
 
-    def post_with_auth(self, url: str, content: str | None = None, auth_token: str | None = None, user_id: int | None = None) -> Response:
+    def post_with_auth(
+            self,
+            url: str,
+            content: str | None = None,
+            params: dict | None = None,
+            auth_token: str | None = None,
+            user_id: int | None = None
+    ) -> Response:
         return self.post(
             url=url,
             content=content,
+            params=params,
             headers=self._get_auth_headers(auth_token, user_id),
         )
 

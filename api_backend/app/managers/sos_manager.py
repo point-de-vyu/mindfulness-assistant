@@ -152,3 +152,11 @@ class SosSelfHelpManager:
             raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         self.logger.info(f"Added {ritual_id=} for {user_id=}")
 
+    def log_ritual_feedback(self, user_id: int, ritual_id: int, feedback: str) -> None:
+        query = sqlalchemy.func.add_sos_ritual_feedback(user_id, ritual_id, feedback)
+        executed_query = self.sql_connection.execute(query)
+        self.sql_connection.commit()
+        result = executed_query.scalar()
+        if not result:
+            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
+        self.logger.info(f"Logged journal entry for {ritual_id=} from {user_id=}")

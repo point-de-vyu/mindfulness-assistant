@@ -158,3 +158,21 @@ def remove_ritual_for_user(
         sos_mng.remove_ritual_from_user_data(user_id, ritual_id)
     except ValueError as err:
         raise_404_error(msg=str(err))
+
+
+@router.post(
+    "/sos_feedback/",
+    summary="Log a journal entry about a ritual"
+)
+def log_ritual_feedback(
+    ritual_id: int,
+    feedback: str,
+    sos_mng: SosMngDep,
+    user_id: int = Depends(authentication)
+) -> None:
+    logger.info(f"Saving journal entry for {ritual_id=} from {user_id=}")
+    try:
+        sos_mng.log_ritual_feedback(user_id, ritual_id, feedback)
+    except IntegrityError as err:
+        raise_400_error(msg=str(err))
+
