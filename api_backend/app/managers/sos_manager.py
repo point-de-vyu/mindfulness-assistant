@@ -9,17 +9,15 @@ from typing import List
 
 class SosSelfHelpManager:
 
-    def __init__(
-            self,
-            engine: sqlalchemy.Engine,
-            logger: logging.Logger
-    ) -> None:
+    def __init__(self, engine: sqlalchemy.Engine, logger: logging.Logger) -> None:
         self.sql_connection = engine.connect()
         self.metadata = sqlalchemy.MetaData()
         self.logger = logger
 
     def get_available_categories(self) -> List[str]:
-        table = sqlalchemy.Table(SosTable.CATEGORIES, self.metadata, autoload_with=self.sql_connection)
+        table = sqlalchemy.Table(
+            SosTable.CATEGORIES, self.metadata, autoload_with=self.sql_connection
+        )
         query = sqlalchemy.select(table.c.name)
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
@@ -30,7 +28,9 @@ class SosSelfHelpManager:
         return results
 
     def get_available_situations(self) -> List[str]:
-        table = sqlalchemy.Table(SosTable.SITUATIONS, self.metadata, autoload_with=self.sql_connection)
+        table = sqlalchemy.Table(
+            SosTable.SITUATIONS, self.metadata, autoload_with=self.sql_connection
+        )
         query = sqlalchemy.select(table.c.name)
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
@@ -41,29 +41,35 @@ class SosSelfHelpManager:
         return results
 
     def get_default_rituals(
-            self,
-            category_name: str | None = None,
-            situation_name: str | None = None
+        self, category_name: str | None = None, situation_name: str | None = None
     ) -> List[SosRitual]:
         category_id = self._get_category_id(category_name) if category_name else None
-        situation_id = self._get_situation_id(situation_name) if situation_name else None
+        situation_id = (
+            self._get_situation_id(situation_name) if situation_name else None
+        )
 
-        query = sqlalchemy.select('*').select_from(sqlalchemy.func.get_default_sos_rituals(category_id, situation_id))
+        query = sqlalchemy.select("*").select_from(
+            sqlalchemy.func.get_default_sos_rituals(category_id, situation_id)
+        )
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
         return result_dicts
 
     def get_user_rituals(
-            self,
-            user_id: int,
-            category_name: str | None = None,
-            situation_name: str | None = None
+        self,
+        user_id: int,
+        category_name: str | None = None,
+        situation_name: str | None = None,
     ) -> List[SosRitual]:
         category_id = self._get_category_id(category_name) if category_name else None
-        situation_id = self._get_situation_id(situation_name) if situation_name else None
+        situation_id = (
+            self._get_situation_id(situation_name) if situation_name else None
+        )
 
-        query = sqlalchemy.select('*').select_from(sqlalchemy.func.get_user_sos_rituals(user_id, category_id, situation_id))
+        query = sqlalchemy.select("*").select_from(
+            sqlalchemy.func.get_user_sos_rituals(user_id, category_id, situation_id)
+        )
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
         result_dicts = [SosRitual(**row._asdict()) for row in rows]
@@ -87,7 +93,7 @@ class SosSelfHelpManager:
                 custom_ritual.title,
                 custom_ritual.description,
                 custom_ritual.url,
-                custom_ritual.tags
+                custom_ritual.tags,
             )
         )
         self.sql_connection.commit()
@@ -99,21 +105,27 @@ class SosSelfHelpManager:
         return result
 
     def _get_category_id(self, category_name: str) -> int:
-        result = self.sql_connection.execute(sqlalchemy.func.get_category_id_from_name(category_name))
+        result = self.sql_connection.execute(
+            sqlalchemy.func.get_category_id_from_name(category_name)
+        )
         result = result.scalar_one_or_none()
         if not result:
             raise ValueError(ErrorMsg.SOS_CATEGORY_INVALID)
         return result
 
     def _get_situation_id(self, situation_name: str) -> int:
-        result = self.sql_connection.execute(sqlalchemy.func.get_situation_id_from_name(situation_name))
+        result = self.sql_connection.execute(
+            sqlalchemy.func.get_situation_id_from_name(situation_name)
+        )
         result = result.scalar_one_or_none()
         if not result:
             raise ValueError(ErrorMsg.SOS_SITUATION_INVALID)
         return result
 
     def _is_existing_default_ritual_id(self, ritual_id: int) -> bool:
-        table = sqlalchemy.Table(SosTable.DEFAULT_IDS, self.metadata, autoload_with=self.sql_connection)
+        table = sqlalchemy.Table(
+            SosTable.DEFAULT_IDS, self.metadata, autoload_with=self.sql_connection
+        )
         query = sqlalchemy.select(table).filter(table.c.id == ritual_id)
         executed_query = self.sql_connection.execute(query)
         rows = executed_query.fetchall()
@@ -124,12 +136,11 @@ class SosSelfHelpManager:
     def add_default_ritual_for_user(self, user_id: int, ritual_id: int) -> None:
         if not self._is_existing_default_ritual_id(ritual_id):
             raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_ID_INVALID)
-        table = sqlalchemy.Table(SosTable.USER_RITUAL, self.metadata, autoload_with=self.sql_connection)
-
-        query = sqlalchemy.insert(table).values(
-            user_id=user_id,
-            ritual_id=ritual_id
+        table = sqlalchemy.Table(
+            SosTable.USER_RITUAL, self.metadata, autoload_with=self.sql_connection
         )
+
+        query = sqlalchemy.insert(table).values(user_id=user_id, ritual_id=ritual_id)
         executed_query = self.sql_connection.execute(query)
         inserted_pkey = executed_query.inserted_primary_key
         self.sql_connection.commit()
