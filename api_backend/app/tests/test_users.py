@@ -7,10 +7,7 @@ from api_backend.app.schemes.user import User
 @pytest.fixture()
 def user_to_create():
     return UserToCreate(
-        username="@007",
-        first_name="James",
-        last_name="Bond",
-        id_from_client=1007
+        username="@007", first_name="James", last_name="Bond", id_from_client=1007
     )
 
 
@@ -18,7 +15,9 @@ def test_add_and_delete_user(api: AssistantApi, user_to_create: UserToCreate) ->
     url = "/v1/users/"
     # post new user
     user_id = user_to_create.id_from_client
-    post_response = api.post_with_auth(url, user_id=user_id, json=user_to_create.model_dump())
+    post_response = api.post_with_auth(
+        url, user_id=user_id, json=user_to_create.model_dump()
+    )
     assert post_response.status_code == 200
     # check user by getting them
     get_response = api.get_with_auth(url, user_id=user_id)

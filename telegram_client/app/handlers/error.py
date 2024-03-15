@@ -10,5 +10,5 @@ async def error(message: Message, exc: Exception | None = None):
         logging.error(exc)
     await message.answer(
         text="Sorry, something went wrong. Try again later",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )

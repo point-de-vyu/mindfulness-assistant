@@ -8,24 +8,24 @@ from typing import Dict
 class UserManager:
     TABLE_NAME = "users"
 
-    def __init__(
-            self,
-            engine: sqlalchemy.Engine,
-            logger: logging.Logger
-    ):
+    def __init__(self, engine: sqlalchemy.Engine, logger: logging.Logger):
         self.sql_connection = engine.connect()
         metadata = sqlalchemy.MetaData()
-        self.users_table = sqlalchemy.Table(UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection)
+        self.users_table = sqlalchemy.Table(
+            UserManager.TABLE_NAME, metadata, autoload_with=self.sql_connection
+        )
         self.logger = logger
 
     def add_new_user(self, user: UserToCreate, client_id: int) -> int:
-        executed_query = self.sql_connection.execute(sqlalchemy.func.add_new_user(
-            user.username,
-            user.first_name,
-            user.last_name,
-            client_id,
-            user.id_from_client
-        ))
+        executed_query = self.sql_connection.execute(
+            sqlalchemy.func.add_new_user(
+                user.username,
+                user.first_name,
+                user.last_name,
+                client_id,
+                user.id_from_client,
+            )
+        )
         self.sql_connection.commit()
         user_id = executed_query.scalar()
         if not user_id:
@@ -41,9 +41,7 @@ class UserManager:
         return self._get_user(username=username)
 
     def _get_user(
-            self,
-            id: int | None = None,
-            username: str | None = None
+        self, id: int | None = None, username: str | None = None
     ) -> User | None:
         def find_not_null_params() -> Dict[str, str | int]:
             column_to_val = {}
@@ -71,7 +69,9 @@ class UserManager:
         return User(**rows[0]._asdict())
 
     def delete_user(self, user_id: int) -> bool:
-        executed_query = self.sql_connection.execute(sqlalchemy.func.delete_user_data(user_id))
+        executed_query = self.sql_connection.execute(
+            sqlalchemy.func.delete_user_data(user_id)
+        )
         self.sql_connection.commit()
         res = executed_query.scalar()
         if not res:
