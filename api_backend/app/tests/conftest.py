@@ -40,20 +40,25 @@ class AssistantApi(TestClient):
         id_header = os.environ["HEADER_NAME_USER_ID"]
         return {token_header: token, id_header: user_id}
 
-    def get_with_auth(self, url: str, auth_token: str | None = None, user_id: int | None = None) -> Response:
-        return self.get(url=url, headers=self._get_auth_headers(auth_token, user_id))
+    def get_with_auth(
+            self, url: str,
+            params: dict | None = None,
+            auth_token: str | None = None,
+            user_id: int | None = None
+    ) -> Response:
+        return self.get(url=url, params=params, headers=self._get_auth_headers(auth_token, user_id))
 
     def post_with_auth(
             self,
             url: str,
-            content: str | None = None,
+            json: dict | None = None,
             params: dict | None = None,
             auth_token: str | None = None,
             user_id: int | None = None
     ) -> Response:
         return self.post(
             url=url,
-            content=content,
+            json=json,
             params=params,
             headers=self._get_auth_headers(auth_token, user_id),
         )

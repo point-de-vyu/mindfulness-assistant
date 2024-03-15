@@ -101,37 +101,37 @@ def test_get_all_default_rituals(api: AssistantApi) -> None:
 
 @pytest.mark.parametrize(param_category, ok_categories)
 def test_get_default_rituals_with_correct_category(api: AssistantApi, category: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_defaults/?category={category}")
+    response = api.get_with_auth(url=f"/v1/sos_defaults/", params={"category": category})
     assert response.status_code == 200
 
 
 @pytest.mark.parametrize(param_category, bad_categories)
 def test_get_default_rituals_with_wrong_category(api: AssistantApi, category: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_defaults/?category={category}")
+    response = api.get_with_auth(url=f"/v1/sos_defaults/", params={"category": category})
     assert response.status_code == 400
 
 
 @pytest.mark.parametrize(param_situation, ok_situations)
 def test_get_default_rituals_with_correct_situation(api: AssistantApi, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_defaults/?situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_defaults/", params={"situation": situation})
     assert response.status_code == 200
 
 
 @pytest.mark.parametrize(param_situation, bad_situations)
 def test_get_default_rituals_with_wrong_situation(api: AssistantApi, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_defaults/?situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_defaults/", params={"situation": situation})
     assert response.status_code == 400
 
 
 @pytest.mark.parametrize(param_combo, ok_combos)
 def test_get_default_rituals_with_correct_combo(api: AssistantApi, category: str, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_defaults/?category={category}&situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_defaults/", params={"category": category, "situation": situation})
     assert response.status_code == 200
 
 
 @pytest.mark.parametrize(param_combo, bad_combos)
 def test_get_default_rituals_with_wrong_combo(api: AssistantApi, category: str, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_defaults/?category={category}&situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_defaults/", params={"category": category, "situation": situation})
     assert response.status_code == 400
 
 
@@ -144,43 +144,43 @@ def test_get_all_user_rituals(api: AssistantApi) -> None:
 
 @pytest.mark.parametrize(param_category, ok_categories)
 def test_get_user_rituals_with_correct_category(api: AssistantApi, category: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_rituals/?category={category}")
+    response = api.get_with_auth(url=f"/v1/sos_rituals/", params={"category": category})
     assert response.status_code == 200
 
 
 @pytest.mark.parametrize(param_category, bad_categories)
 def test_get_user_rituals_with_wrong_category(api: AssistantApi, category: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_rituals/?category={category}")
+    response = api.get_with_auth(url=f"/v1/sos_rituals/", params={"category": category})
     assert response.status_code == 400
 
 
 @pytest.mark.parametrize(param_situation, ok_situations)
 def test_get_user_rituals_with_correct_situation(api: AssistantApi, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_rituals/?situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_rituals/", params={"situation": situation})
     assert response.status_code == 200
 
 
 @pytest.mark.parametrize(param_situation, bad_situations)
 def test_get_user_rituals_with_wrong_situation(api: AssistantApi, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_rituals/?situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_rituals/", params={"situation": situation})
     assert response.status_code == 400
 
 
 @pytest.mark.parametrize(param_combo, ok_combos)
 def test_get_user_rituals_with_correct_combo(api: AssistantApi, category: str, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_rituals/?category={category}&situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_rituals/", params={"category": category, "situation": situation})
     assert response.status_code == 200
 
 
 @pytest.mark.parametrize(param_combo, bad_combos)
 def test_get_user_rituals_with_wrong_combo(api: AssistantApi, category: str, situation: str) -> None:
-    response = api.get_with_auth(url=f"/v1/sos_rituals/?category={category}&situation={situation}")
+    response = api.get_with_auth(url=f"/v1/sos_rituals/", params={"category": category, "situation": situation})
     assert response.status_code == 400
 
 
 def test_add_ok_default_ritual_to_user(api: AssistantApi, correct_default_ritual_id: int) -> None:
     id = correct_default_ritual_id
-    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
+    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/", params={"default_ritual_id": id})
     assert post_response.status_code == 200
 
     get_user_rits_response_after_post = api.get_with_auth(f"/v1/sos_rituals/{id}")
@@ -193,10 +193,10 @@ def test_add_ok_default_ritual_to_user(api: AssistantApi, correct_default_ritual
 
 def test_add_duplicate_default_ritual_to_user(api: AssistantApi, correct_default_ritual_id: int) -> None:
     id = correct_default_ritual_id
-    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
+    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/", params={"default_ritual_id": id})
     assert post_response.status_code == 200
 
-    post_duplicate_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
+    post_duplicate_response = api.post_with_auth(url=f"/v1/default_sos_ritual/", params={"default_ritual_id": id})
     assert post_duplicate_response.status_code == 409
 
     # cleanup
@@ -205,13 +205,13 @@ def test_add_duplicate_default_ritual_to_user(api: AssistantApi, correct_default
 
 def test_add_wrong_default_ritual_to_user(api: AssistantApi, wrong_default_ritual_id: int) -> None:
     id = wrong_default_ritual_id
-    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
+    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/", params={"default_ritual_id": id})
     assert post_response.status_code == 400
 
 
 def test_add_correct_custom_ritual_to_user(api: AssistantApi, ok_ritual_to_create: SosRitualToCreate) -> None:
     ritual = ok_ritual_to_create
-    post_response = api.post_with_auth(url="/v1/custom_sos_ritual/", content=ritual.model_dump_json())
+    post_response = api.post_with_auth(url="/v1/custom_sos_ritual/", json=ritual.model_dump())
     assert post_response.status_code == 200
     assert post_response.json()
     created_ritual_id = post_response.json()["created_ritual_id"]
@@ -232,13 +232,13 @@ def test_add_correct_custom_ritual_to_user(api: AssistantApi, ok_ritual_to_creat
 
 @pytest.mark.parametrize("ritual", bad_rituals_to_create)
 def test_add_wrong_custom_ritual_to_user(api: AssistantApi, ritual: SosRitualToCreate) -> None:
-    post_response = api.post_with_auth(url="/v1/custom_sos_ritual/", content=ritual.model_dump_json())
+    post_response = api.post_with_auth(url="/v1/custom_sos_ritual/", json=ritual.model_dump())
     assert post_response.status_code == 400
 
 
 def test_delete_existing_ritual_from_user(api: AssistantApi, correct_default_ritual_id: int) -> None:
     id = correct_default_ritual_id
-    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/?default_ritual_id={id}")
+    post_response = api.post_with_auth(url=f"/v1/default_sos_ritual/", params={"default_ritual_id": id})
     assert post_response.status_code == 200
 
     delete_response = api.delete_with_auth(url=f"/v1/sos_rituals/{id}")

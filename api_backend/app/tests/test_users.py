@@ -18,7 +18,7 @@ def test_add_and_delete_user(api: AssistantApi, user_to_create: UserToCreate) ->
     url = "/v1/users/"
     # post new user
     user_id = user_to_create.id_from_client
-    post_response = api.post_with_auth(url, user_id=user_id, content=user_to_create.model_dump_json())
+    post_response = api.post_with_auth(url, user_id=user_id, json=user_to_create.model_dump())
     assert post_response.status_code == 200
     # check user by getting them
     get_response = api.get_with_auth(url, user_id=user_id)
