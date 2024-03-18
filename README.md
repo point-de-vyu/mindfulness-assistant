@@ -38,6 +38,8 @@ Even though I developed it for myself, I believe it can benefit other people too
 
 ✉️ AIOgram
 
+🧪 Pytest
+
 ### What's to come? 
 
 This is not going to be all!
