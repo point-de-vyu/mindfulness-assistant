@@ -19,7 +19,9 @@ async def greet_on_start(message: Message):
 
 
 async def skills(message: Message):
-    text1 = "At the moment, you can call a /sos command if you feel overwhelmed, and I'll offer you an exercise to " \
-           "try to deal with your feelings."
+    text1 = (
+        "At the moment, you can call a /sos command if you feel overwhelmed, and I'll offer you an exercise to "
+        "try to deal with your feelings."
+    )
     await message.answer(text=text1)
     await explain_signing_up(message)

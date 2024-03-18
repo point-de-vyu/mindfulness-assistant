@@ -3,7 +3,12 @@ import logging
 from telegram_client.app.handlers.error import error
 from telegram_client.app.utils.requests import get_headers, get_base_url
 from aiogram import F, Router
-from aiogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (
+    CallbackQuery,
+    Message,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
 
 
 router = Router()
@@ -16,7 +21,7 @@ async def sign_up(callback: CallbackQuery):
         "first_name": user.first_name,
         "last_name": user.last_name,
         "username": user.username,
-        "id_from_client": user.id
+        "id_from_client": user.id,
     }
     url = get_base_url(router="users")
     headers = get_headers(callback.from_user.id)
@@ -31,20 +36,26 @@ async def sign_up(callback: CallbackQuery):
         await error(callback.message)
         return
     await callback.message.edit_text(text)
-    await callback.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=new_markup))
+    await callback.message.edit_reply_markup(
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=new_markup)
+    )
 
 
 async def explain_signing_up(message: Message):
-    text1 = "If you are ready to give me a try, please sign up." \
-           "\n\nTo be transparent, after you click the button, I will store some of your personal info, " \
-           "such as your id, name and username."
+    text1 = (
+        "If you are ready to give me a try, please sign up."
+        "\n\nTo be transparent, after you click the button, I will store some of your personal info, "
+        "such as your id, name and username."
+    )
     text2 = "If you are ok with that, press the button and let's begin the journey!"
     await message.answer(text=text1)
     await message.answer(
         text=text2,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="Sign up", callback_data="sign_up")]]
-        )
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Sign up", callback_data="sign_up")]
+            ]
+        ),
     )
 
 
@@ -52,7 +63,9 @@ async def forbidden_need_signing_up(message: Message):
     text = "Sorry, you can only use me if you've signed up. It is very simple though!"
     await message.answer(
         text=text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="Sign up", callback_data="sign_up")]]
-        )
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Sign up", callback_data="sign_up")]
+            ]
+        ),
     )

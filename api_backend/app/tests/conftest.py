@@ -41,20 +41,23 @@ class AssistantApi(TestClient):
         return {token_header: token, id_header: user_id}
 
     def get_with_auth(
-            self, url: str,
-            params: dict | None = None,
-            auth_token: str | None = None,
-            user_id: int | None = None
+        self,
+        url: str,
+        params: dict | None = None,
+        auth_token: str | None = None,
+        user_id: int | None = None,
     ) -> Response:
-        return self.get(url=url, params=params, headers=self._get_auth_headers(auth_token, user_id))
+        return self.get(
+            url=url, params=params, headers=self._get_auth_headers(auth_token, user_id)
+        )
 
     def post_with_auth(
-            self,
-            url: str,
-            json: dict | None = None,
-            params: dict | None = None,
-            auth_token: str | None = None,
-            user_id: int | None = None
+        self,
+        url: str,
+        json: dict | None = None,
+        params: dict | None = None,
+        auth_token: str | None = None,
+        user_id: int | None = None,
     ) -> Response:
         return self.post(
             url=url,
@@ -63,7 +66,9 @@ class AssistantApi(TestClient):
             headers=self._get_auth_headers(auth_token, user_id),
         )
 
-    def delete_with_auth(self, url: str, auth_token: str | None = None, user_id: int | None = None) -> Response:
+    def delete_with_auth(
+        self, url: str, auth_token: str | None = None, user_id: int | None = None
+    ) -> Response:
         return self.delete(
             url=url,
             headers=self._get_auth_headers(auth_token, user_id),
@@ -77,18 +82,24 @@ class AssistantApi(TestClient):
         connection.execute(sqlalchemy.text("DELETE FROM clients_users;"))
         connection.execute(sqlalchemy.text("DELETE FROM clients;"))
         connection.execute(sqlalchemy.text("DELETE FROM users;"))
-        connection.execute(sqlalchemy.text(f"DELETE FROM {SosTable.RITUALS} "
-                                           f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});")
-                           )
+        connection.execute(
+            sqlalchemy.text(
+                f"DELETE FROM {SosTable.RITUALS} "
+                f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});"
+            )
+        )
         connection.commit()
 
     def _add_authorised_client(self, connection: sqlalchemy.Connection) -> None:
         client_id = os.environ["TEST_CLIENT_ID"]
         client_type_id = os.environ["TEST_CLIENT_TYPE_ID"]
         token = self.client_auth_token
-        connection.execute(sqlalchemy.text(f"INSERT INTO clients VALUES("
-                                           f"{client_id}, {client_type_id}, '{token}');")
-                           )
+        connection.execute(
+            sqlalchemy.text(
+                f"INSERT INTO clients VALUES("
+                f"{client_id}, {client_type_id}, '{token}');"
+            )
+        )
 
     def _add_default_test_user(self, connection: sqlalchemy.Connection) -> None:
         username = os.environ["TEST_USERNAME"]
@@ -97,12 +108,9 @@ class AssistantApi(TestClient):
         client_id = os.environ["TEST_CLIENT_ID"]
         user_id = os.environ["TEST_USER_ID"]
         self.user_id = int(user_id)
-        connection.execute(sqlalchemy.func.add_new_user(
-            username,
-            first_name,
-            last_name,
-            client_id,
-            user_id
+        connection.execute(
+            sqlalchemy.func.add_new_user(
+                username, first_name, last_name, client_id, user_id
             )
         )
         connection.commit()
@@ -111,6 +119,7 @@ class AssistantApi(TestClient):
 @pytest.fixture(scope="session")
 def api():
     from api_backend.app.main import app
+
     api = AssistantApi(app=app)
     # override dependency to use test DB
     app.dependency_overrides[get_postgres_engine] = get_postgres_engine_for_testing

@@ -26,8 +26,3 @@ def get_postgres_engine(db_name: str | None = None) -> sqlalchemy.engine.Engine:
     db_name = db_name or main_db_name
     engine = sqlalchemy.create_engine(get_db_url(db_name), echo=False)
     return engine
-
-
-
-
-

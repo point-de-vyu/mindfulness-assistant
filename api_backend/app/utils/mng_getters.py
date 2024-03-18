@@ -8,14 +8,14 @@ import sqlalchemy
 
 
 def get_user_manager(
-        db_engine: sqlalchemy.Engine = Depends(get_postgres_engine),
-        logger: logging.Logger = Depends(get_logger)
+    db_engine: sqlalchemy.Engine = Depends(get_postgres_engine),
+    logger: logging.Logger = Depends(get_logger),
 ) -> UserManager:
     return UserManager(engine=db_engine, logger=logger)
 
 
 def get_sos_manager(
     db_engine: sqlalchemy.Engine = Depends(get_postgres_engine),
-    logger: logging.Logger = Depends(get_logger)
+    logger: logging.Logger = Depends(get_logger),
 ) -> SosSelfHelpManager:
     return SosSelfHelpManager(engine=db_engine, logger=logger)

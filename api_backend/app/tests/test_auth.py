@@ -27,8 +27,12 @@ def test_no_id_header(api: AssistantApi) -> None:
     assert response.status_code == 422
 
 
-def test_unauthorized_client_token(api: AssistantApi, unauthorized_client_token: str) -> None:
-    response = api.get_with_auth(url="/v1/sos_categories/", auth_token=unauthorized_client_token)
+def test_unauthorized_client_token(
+    api: AssistantApi, unauthorized_client_token: str
+) -> None:
+    response = api.get_with_auth(
+        url="/v1/sos_categories/", auth_token=unauthorized_client_token
+    )
     assert response.status_code == 401
 
 

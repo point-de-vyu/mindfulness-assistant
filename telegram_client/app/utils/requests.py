@@ -13,4 +13,3 @@ def get_headers(user_id: str | int) -> dict:
 def get_base_url(router: str, endpoint: str = os.environ["API_ENDPOINT"]) -> str:
     router = router.strip("/")
     return f"http://{endpoint}/{router}/"
-

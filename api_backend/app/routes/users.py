@@ -21,14 +21,11 @@ router = APIRouter(tags=["users"])
 UserMngDep = Annotated[UserManager, Depends(get_user_manager)]
 
 
-@router.post(
-    "/users/",
-    summary="Add a new user"
-)
+@router.post("/users/", summary="Add a new user")
 def add_new_user(
-        user: UserToCreate,
-        user_mng: UserMngDep,
-        client_id: int = Depends(client_authentication)
+    user: UserToCreate,
+    user_mng: UserMngDep,
+    client_id: int = Depends(client_authentication),
 ) -> None:
     logger.info(f"Creating new user {user}")
     try:
@@ -36,32 +33,22 @@ def add_new_user(
     except IntegrityError:
         raise_409_error(ErrorMsg.USER_ALREADY_EXISTS)
     except RuntimeError as runt_err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(runt_err)
+        )
     logger.info(f"Created new user with {id=}")
 
 
-@router.get(
-    "/users/",
-    summary="Get user info"
-)
-def get_user(
-    user_mng: UserMngDep,
-    user_id: int = Depends(authentication)
-) -> User:
+@router.get("/users/", summary="Get user info")
+def get_user(user_mng: UserMngDep, user_id: int = Depends(authentication)) -> User:
     user = user_mng.get_by_id(user_id)
     if not user:
         raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
     return user
 
 
-@router.get(
-    "/user_by_username/{username}",
-    summary="Get user by their unique username"
-)
-def get_user_by_username(
-        username: str,
-        user_mng: UserMngDep
-) -> User:
+@router.get("/user_by_username/{username}", summary="Get user by their unique username")
+def get_user_by_username(username: str, user_mng: UserMngDep) -> User:
     logger.info(f"Getting user data for {username=}")
     user = user_mng.get_by_username(username)
     if not user:
@@ -69,14 +56,8 @@ def get_user_by_username(
     return user
 
 
-@router.get(
-    "/user_by_id/{id}",
-    summary="Get user by their unique id"
-)
-def get_user_by_username(
-        id: int,
-        user_mng: UserMngDep
-) -> User:
+@router.get("/user_by_id/{id}", summary="Get user by their unique id")
+def get_user_by_username(id: int, user_mng: UserMngDep) -> User:
     logger.info(f"Getting user data for {id=}")
     user = user_mng.get_by_id(id)
     if not user:
@@ -84,17 +65,14 @@ def get_user_by_username(
     return user
 
 
-@router.delete(
-    "/users/",
-    summary="Delete user and all their data"
-)
-def delete_user(
-        user_mng: UserMngDep,
-        user_id: int = Depends(authentication)
-) -> None:
+@router.delete("/users/", summary="Delete user and all their data")
+def delete_user(user_mng: UserMngDep, user_id: int = Depends(authentication)) -> None:
     # мб фиг с 500? все равно клиент их получит, а так можно без трай, если пустой лист юзера - шлем ошибкку:
     logger.info(f"Deleting user data for {user_id=}")
     user_deleted = user_mng.delete_user(user_id)
     if not user_deleted:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete?")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete?",
+        )
     logger.info(f"Deleted user with {user_id=} and all their data")

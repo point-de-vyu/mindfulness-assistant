@@ -19,8 +19,8 @@ app.include_router(sos_rituals.router, prefix="/v1")
     "/",
     summary="Index page",
     description="Base index page - just links to docs/schemas",
-    response_class=HTMLResponse
-    )
+    response_class=HTMLResponse,
+)
 def root() -> str:
     """Index page"""
     logger.info("Accessing index page")
@@ -29,11 +29,7 @@ def root() -> str:
 
 def main() -> None:
     logger.info("Start api_backend service locally")
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=80
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=80)
 
 
 if __name__ == "__main__":
