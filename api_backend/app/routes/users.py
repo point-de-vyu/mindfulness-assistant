@@ -67,7 +67,6 @@ def get_user_by_username(id: int, user_mng: UserMngDep) -> User:
 
 @router.delete("/users/", summary="Delete user and all their data")
 def delete_user(user_mng: UserMngDep, user_id: int = Depends(authentication)) -> None:
-    # мб фиг с 500? все равно клиент их получит, а так можно без трай, если пустой лист юзера - шлем ошибкку:
     logger.info(f"Deleting user data for {user_id=}")
     user_deleted = user_mng.delete_user(user_id)
     if not user_deleted:

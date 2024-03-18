@@ -1,7 +1,0 @@
-
-services:
-  tg_client:
-    build:
-      context: .
-    env_file:
-      - .env

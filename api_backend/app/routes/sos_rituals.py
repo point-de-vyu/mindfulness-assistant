@@ -20,7 +20,6 @@ logger = get_logger()
 SosMngDep = Annotated[SosSelfHelpManager, Depends(get_sos_manager)]
 
 
-# TODO может, возвращать не лист строк, а лист диктов {id: name}? чтобы посылать id
 @router.get(
     "/sos_categories/", description="Get categories of default rituals, e.g. Meditation"
 )
@@ -32,7 +31,6 @@ def get_categories(
     return result
 
 
-# TODO может, возвращать не лист строк, а лист диктов {id: name}? чтобы посылать id
 @router.get(
     "/sos_situations/", description="Get situations of default rituals, e.g. Stress"
 )
