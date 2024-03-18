@@ -1,6 +1,6 @@
 ### What is this project about?
 
-Mindfulness is somewhat of a buzzword these days, and still many people (including myself) often get caught up in negative emotions, ruminations and traumatic memories. 
+Mindfulness is somewhat of a buzzword these days, and yet still many people (including myself) often get caught up in negative emotions, ruminations and traumatic memories. 
 
 There are lots of apps out there designed to help, but I realised that when I open my phone there are so many apps fighting for my attention that it's extremely difficult to remember what I unlocked my screen for - so I failed to consistently use any of them.
 
@@ -22,6 +22,8 @@ At the moment, there is just one simple flow, I called it `sos`. Having typed a 
 
 Upon completion, you can reflect on how this exercise went, what changed in your mind and body, and journal your thoughts. 
 The rituals that worked best for you can be added to favourites. 
+
+From the very start, the flow is designed to focus you on your state of mind. There are no distractions, no visual noise, and the bot does not overload you with different choices.
 
 Even though I developed it for myself, I believe it can benefit other people too, so I made it public: https://t.me/mindfulness_assist_bot
 
