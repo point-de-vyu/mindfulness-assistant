@@ -39,6 +39,14 @@ def add_new_user(
     logger.info(f"Created new user with {id=}")
 
 
+@router.get("/users/", summary="Get user info")
+def get_user(user_mng: UserMngDep, user_id: int = Depends(authentication)) -> User:
+    user = user_mng.get_by_id(user_id)
+    if not user:
+        raise_404_error(msg=ErrorMsg.USER_NOT_FOUND)
+    return user
+
+
 @router.delete("/users/", summary="Delete user and all their data")
 def delete_user(user_mng: UserMngDep, user_id: int = Depends(authentication)) -> None:
     logger.info(f"Deleting user data for {user_id=}")

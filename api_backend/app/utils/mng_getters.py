@@ -8,14 +8,14 @@ from sqlalchemy.orm import Session
 
 
 def get_user_manager(
-    db_session: Session = Depends(Database().get_session_dep),
+    db_session: Session = Depends(Database.get_session_dep),
     logger: logging.Logger = Depends(get_logger),
 ) -> UserManager:
     return UserManager(session=db_session, logger=logger)
 
 
 def get_sos_manager(
-    db_session: Session = Depends(Database().get_session_dep),
+    db_session: Session = Depends(Database.get_session_dep),
     logger: logging.Logger = Depends(get_logger),
 ) -> SosSelfHelpManager:
     return SosSelfHelpManager(session=db_session, logger=logger)

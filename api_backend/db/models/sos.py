@@ -1,6 +1,8 @@
 import sqlalchemy
 from sqlalchemy.orm import Mapped, mapped_column
 from api_backend.db.models.base import Base
+from typing import Any
+from sqlalchemy import ForeignKey
 
 
 class SosSituations(Base):
@@ -17,14 +19,29 @@ class SosCategories(Base):
     name: Mapped[str]
 
 
+class SosRituals(Base):
+    __tablename__ = "sos_rituals"
+
+    id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)
+    # FK to sos_categories.id
+    category_id: Mapped[int]
+    # FK to sos_situations.id
+    situation_id: Mapped[int]
+    title: Mapped[str]
+    description: Mapped[str]
+    url: Mapped[str]
+    tags: Mapped[dict[str, Any]] = mapped_column(sqlalchemy.JSON)
+
+
 class SosDefaultRitualIds(Base):
     __tablename__ = "sos_rituals_default_ids"
 
     id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)
 
 
-class UserRitual(Base):
+class UserRituals(Base):
     __tablename__ = "user_sos_ritual"
-
+    # FK to users.id
     user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)
+    # FK to sos_rituals.id
     ritual_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)

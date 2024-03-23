@@ -1,9 +1,13 @@
 import sqlalchemy
 from api_backend.app.schemes.sos_rituals import SosRitual
 from api_backend.app.schemes.sos_rituals import SosRitualToCreate
-from api_backend.app.schemes.sos_rituals import SosTable
 from api_backend.app.schemes.error_messages import ErrorMsg
-from api_backend.db.models.sos import SosSituations, SosCategories, SosDefaultRitualIds, UserRitual
+from api_backend.db.models.sos import (
+    SosSituations,
+    SosCategories,
+    SosDefaultRitualIds,
+    UserRituals,
+)
 import logging
 from typing import List
 from sqlalchemy.orm import Session
@@ -121,7 +125,9 @@ class SosSelfHelpManager:
         if not self._is_existing_default_ritual_id(ritual_id):
             raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_ID_INVALID)
 
-        query = sqlalchemy.insert(UserRitual).values(user_id=user_id, ritual_id=ritual_id)
+        query = sqlalchemy.insert(UserRituals).values(
+            user_id=user_id, ritual_id=ritual_id
+        )
         executed_query = self.db_session.execute(query)
         inserted_pkey = executed_query.inserted_primary_key
         self.db_session.commit()

@@ -3,7 +3,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api_backend.app.utils.db import Database
-from api_backend.app.schemes.sos_rituals import SosTable
+from api_backend.db.models.clients import Clients, ClientsUsers
+from api_backend.db.models.users import Users
+from api_backend.db.models.sos import SosRituals, SosDefaultRitualIds
 import sqlalchemy
 from sqlalchemy.orm import Session
 from requests import Response
@@ -23,7 +25,7 @@ class AssistantApi(TestClient):
         super().__init__(**kwargs)
         self.client_auth_token = os.environ["TEST_CLIENT_AUTH_TOKEN"]
         self.user_id = int(os.environ["TEST_USER_ID"])
-        with Database(name=os.environ["TEST_DB_NAME"]).get_session() as session:
+        with Database.get_test_session() as session:
             self.prepare_db(session)
             session.close()
 
@@ -78,26 +80,40 @@ class AssistantApi(TestClient):
         """
         Deleting from users table will cascade to all tables where user_id is a FK.
         """
-        session.execute(sqlalchemy.text("DELETE FROM clients_users;"))
-        session.execute(sqlalchemy.text("DELETE FROM clients;"))
-        session.execute(sqlalchemy.text("DELETE FROM users;"))
+        session.execute(sqlalchemy.delete(ClientsUsers))
+        # session.execute(sqlalchemy.text("DELETE FROM clients_users;"))
+        session.execute(sqlalchemy.delete(Clients))
+        # session.execute(sqlalchemy.text("DELETE FROM clients;"))
+        session.execute(sqlalchemy.delete(Users))
+        # session.execute(sqlalchemy.text("DELETE FROM users;"))
         session.execute(
-            sqlalchemy.text(
-                f"DELETE FROM {SosTable.RITUALS} "
-                f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});"
+            sqlalchemy.delete(SosRituals).where(
+                SosRituals.id.notin_(sqlalchemy.select(SosDefaultRitualIds.id))
             )
         )
+        # session.execute(
+        #     sqlalchemy.text(
+        #         f"DELETE FROM {SosTable.RITUALS} "
+        #         f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});"
+        #     )
+        # )
         session.commit()
 
     def _add_authorised_client(self, session: Session) -> None:
         client_id = os.environ["TEST_CLIENT_ID"]
         client_type_id = os.environ["TEST_CLIENT_TYPE_ID"]
+        # session.execute(
+        #     sqlalchemy.text(
+        #         f"INSERT INTO clients VALUES("
+        #         f"{client_id}, {client_type_id}, '{self.client_auth_token}');"
+        #     )
+        # )
         session.execute(
-            sqlalchemy.text(
-                f"INSERT INTO clients VALUES("
-                f"{client_id}, {client_type_id}, '{self.client_auth_token}');"
+            sqlalchemy.insert(Clients).values(
+                id=client_id, client_type_id=client_type_id, token=self.client_auth_token
             )
         )
+        session.commit()
 
     def _add_default_test_user(self, session: Session) -> None:
         username = os.environ["TEST_USERNAME"]
@@ -115,10 +131,11 @@ class AssistantApi(TestClient):
 @pytest.fixture(scope="session")
 def api():
     from api_backend.app.main import app
+
     api = AssistantApi(app=app)
     # override dependency to use test DB
-    app.dependency_overrides[Database().get_session_dep] = Database(name=os.environ["TEST_DB_NAME"]).get_session_dep
-    return api
+    app.dependency_overrides[Database.get_session_dep] = Database.get_test_session_dep
+    yield api
 
 
 @pytest.fixture(scope="session")

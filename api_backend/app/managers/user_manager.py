@@ -2,7 +2,6 @@ import sqlalchemy
 from api_backend.app.schemes.user import User, UserToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
 import logging
-from typing import Dict
 from sqlalchemy.orm import Session
 
 
@@ -30,6 +29,20 @@ class UserManager:
             self.logger.critical(f"{msg} adding new user")
             raise RuntimeError(msg)
         return user_id
+
+    def get_by_id(self, id: int) -> User | None:
+        query = sqlalchemy.select(self.users_table).filter_by(id=id)
+        executed_query = self.db_session.execute(query)
+        rows = executed_query.fetchall()
+        if len(rows) > 1:
+            msg = ErrorMsg.ROWS_MORE_THAN_ONE
+            self.logger.critical(msg)
+            raise RuntimeError(msg)
+
+        if not rows:
+            return None
+        # LESSON_LEARNT: trying to return row objects causes errors with fastapi decoder. Using _asdict() to get dict
+        return User(**rows[0]._asdict())
 
     def delete_user(self, user_id: int) -> bool:
         executed_query = self.db_session.execute(

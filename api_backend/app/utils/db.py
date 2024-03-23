@@ -1,3 +1,4 @@
+import logging
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -23,22 +24,54 @@ def get_db_url(db_name: str | None = None) -> str:
 
 
 class Database:
-    def __init__(self, name: str | None = None, echo: bool = False):
-        self.engine = create_engine(
-            url=get_db_url(name),
+    # def __init__(self, name: str | None = None, echo: bool = False):
+    #     pass
+    #     # self.engine = create_engine(
+    #     #     url=get_db_url(name),
+    #     #     echo=echo,
+    #     # )
+    #     # self.session_factory = sessionmaker(
+    #     #     bind=self.engine,
+    #     #     autoflush=False,
+    #     #     autocommit=False,
+    #     #     expire_on_commit=False,
+    #     # )
+
+    @staticmethod
+    def get_session_factory(db_name: str | None = None, echo: bool = False):
+        engine = create_engine(
+            url=get_db_url(db_name),
             echo=echo,
         )
-        self.session_factory = sessionmaker(
-            bind=self.engine,
+        return sessionmaker(
+            bind=engine,
             autoflush=False,
             autocommit=False,
             expire_on_commit=False,
         )
 
-    def get_session(self) -> Session:
-        return self.session_factory()
+    @staticmethod
+    def get_session() -> Session:
+        factory = Database.get_session_factory()
+        session = factory()
+        return session
 
-    def get_session_dep(self):
-        with self.session_factory() as session:
+    @staticmethod
+    def get_session_dep():
+        factory = Database.get_session_factory()
+        with factory() as session:
+            yield session
+            session.close()
+
+    @staticmethod
+    def get_test_session() -> Session:
+        factory = Database.get_session_factory(db_name=os.environ["TEST_DB_NAME"])
+        session = factory()
+        return session
+
+    @staticmethod
+    def get_test_session_dep():
+        factory = Database.get_session_factory(db_name=os.environ["TEST_DB_NAME"])
+        with factory() as session:
             yield session
             session.close()
