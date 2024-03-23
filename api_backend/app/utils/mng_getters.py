@@ -3,19 +3,19 @@ import logging
 from api_backend.app.logger import get_logger
 from api_backend.app.managers.user_manager import UserManager
 from api_backend.app.managers.sos_manager import SosSelfHelpManager
-from api_backend.app.utils.db import get_postgres_session
+from api_backend.app.utils.db import Database
 from sqlalchemy.orm import Session
 
 
 def get_user_manager(
-    db_session: Session = Depends(get_postgres_session),
+    db_session: Session = Depends(Database().get_session_dep),
     logger: logging.Logger = Depends(get_logger),
 ) -> UserManager:
     return UserManager(session=db_session, logger=logger)
 
 
 def get_sos_manager(
-    db_session: Session = Depends(get_postgres_session),
+    db_session: Session = Depends(Database().get_session_dep),
     logger: logging.Logger = Depends(get_logger),
 ) -> SosSelfHelpManager:
     return SosSelfHelpManager(session=db_session, logger=logger)

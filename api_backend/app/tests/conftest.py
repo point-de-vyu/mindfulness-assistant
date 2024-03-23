@@ -2,16 +2,11 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-from api_backend.app.utils.db import get_postgres_session
+from api_backend.app.utils.db import Database
 from api_backend.app.schemes.sos_rituals import SosTable
 import sqlalchemy
 from sqlalchemy.orm import Session
 from requests import Response
-
-
-def get_postgres_session_for_testing():
-    test_db_name = os.environ["TEST_DB_NAME"]
-    return get_postgres_session(db_name=test_db_name)
 
 
 class AssistantApi(TestClient):
@@ -26,14 +21,16 @@ class AssistantApi(TestClient):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.session = get_postgres_session_for_testing()
         self.client_auth_token = os.environ["TEST_CLIENT_AUTH_TOKEN"]
-        self.prepare_db()
+        self.user_id = int(os.environ["TEST_USER_ID"])
+        with Database(name=os.environ["TEST_DB_NAME"]).get_session() as session:
+            self.prepare_db(session)
+            session.close()
 
-    def prepare_db(self):
-        self._reset_db(self.session)
-        self._add_authorised_client(self.session)
-        self._add_default_test_user(self.session)
+    def prepare_db(self, session: Session):
+        self._reset_db(session)
+        self._add_authorised_client(session)
+        self._add_default_test_user(session)
 
     def _get_auth_headers(self, token: str | None = None, user_id: int | None = None):
         token = token or self.client_auth_token
@@ -95,11 +92,10 @@ class AssistantApi(TestClient):
     def _add_authorised_client(self, session: Session) -> None:
         client_id = os.environ["TEST_CLIENT_ID"]
         client_type_id = os.environ["TEST_CLIENT_TYPE_ID"]
-        token = self.client_auth_token
         session.execute(
             sqlalchemy.text(
                 f"INSERT INTO clients VALUES("
-                f"{client_id}, {client_type_id}, '{token}');"
+                f"{client_id}, {client_type_id}, '{self.client_auth_token}');"
             )
         )
 
@@ -108,24 +104,20 @@ class AssistantApi(TestClient):
         first_name = os.environ["TEST_FIRSTNAME"]
         last_name = os.environ["TEST_LASTNAME"]
         client_id = os.environ["TEST_CLIENT_ID"]
-        user_id = os.environ["TEST_USER_ID"]
-        self.user_id = int(user_id)
         session.execute(
             sqlalchemy.func.add_new_user(
-                username, first_name, last_name, client_id, user_id
+                username, first_name, last_name, client_id, self.user_id
             )
         )
         session.commit()
 
 
 @pytest.fixture(scope="session")
-async def api():
+def api():
     from api_backend.app.main import app
-
     api = AssistantApi(app=app)
     # override dependency to use test DB
-    app.dependency_overrides[get_postgres_session] = get_postgres_session_for_testing
-
+    app.dependency_overrides[Database().get_session_dep] = Database(name=os.environ["TEST_DB_NAME"]).get_session_dep
     return api
 
 
