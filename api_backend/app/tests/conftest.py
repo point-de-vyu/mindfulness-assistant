@@ -2,15 +2,16 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-from api_backend.app.utils.db import get_postgres_engine
+from api_backend.app.utils.db import get_postgres_session
 from api_backend.app.schemes.sos_rituals import SosTable
 import sqlalchemy
+from sqlalchemy.orm import Session
 from requests import Response
 
 
-def get_postgres_engine_for_testing() -> sqlalchemy.engine.Engine:
+def get_postgres_session_for_testing():
     test_db_name = os.environ["TEST_DB_NAME"]
-    return get_postgres_engine(db_name=test_db_name)
+    return get_postgres_session(db_name=test_db_name)
 
 
 class AssistantApi(TestClient):
@@ -25,13 +26,14 @@ class AssistantApi(TestClient):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        engine = get_postgres_engine_for_testing()
+        self.session = get_postgres_session_for_testing()
         self.client_auth_token = os.environ["TEST_CLIENT_AUTH_TOKEN"]
-        with engine.connect() as connection:
-            self._reset_db(connection)
-            self._add_authorised_client(connection)
-            self._add_default_test_user(connection)
-        connection.close()
+        self.prepare_db()
+
+    def prepare_db(self):
+        self._reset_db(self.session)
+        self._add_authorised_client(self.session)
+        self._add_default_test_user(self.session)
 
     def _get_auth_headers(self, token: str | None = None, user_id: int | None = None):
         token = token or self.client_auth_token
@@ -75,55 +77,56 @@ class AssistantApi(TestClient):
         )
 
     @staticmethod
-    def _reset_db(connection: sqlalchemy.Connection) -> None:
+    def _reset_db(session: Session) -> None:
         """
         Deleting from users table will cascade to all tables where user_id is a FK.
         """
-        connection.execute(sqlalchemy.text("DELETE FROM clients_users;"))
-        connection.execute(sqlalchemy.text("DELETE FROM clients;"))
-        connection.execute(sqlalchemy.text("DELETE FROM users;"))
-        connection.execute(
+        session.execute(sqlalchemy.text("DELETE FROM clients_users;"))
+        session.execute(sqlalchemy.text("DELETE FROM clients;"))
+        session.execute(sqlalchemy.text("DELETE FROM users;"))
+        session.execute(
             sqlalchemy.text(
                 f"DELETE FROM {SosTable.RITUALS} "
                 f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});"
             )
         )
-        connection.commit()
+        session.commit()
 
-    def _add_authorised_client(self, connection: sqlalchemy.Connection) -> None:
+    def _add_authorised_client(self, session: Session) -> None:
         client_id = os.environ["TEST_CLIENT_ID"]
         client_type_id = os.environ["TEST_CLIENT_TYPE_ID"]
         token = self.client_auth_token
-        connection.execute(
+        session.execute(
             sqlalchemy.text(
                 f"INSERT INTO clients VALUES("
                 f"{client_id}, {client_type_id}, '{token}');"
             )
         )
 
-    def _add_default_test_user(self, connection: sqlalchemy.Connection) -> None:
+    def _add_default_test_user(self, session: Session) -> None:
         username = os.environ["TEST_USERNAME"]
         first_name = os.environ["TEST_FIRSTNAME"]
         last_name = os.environ["TEST_LASTNAME"]
         client_id = os.environ["TEST_CLIENT_ID"]
         user_id = os.environ["TEST_USER_ID"]
         self.user_id = int(user_id)
-        connection.execute(
+        session.execute(
             sqlalchemy.func.add_new_user(
                 username, first_name, last_name, client_id, user_id
             )
         )
-        connection.commit()
+        session.commit()
 
 
 @pytest.fixture(scope="session")
-def api():
+async def api():
     from api_backend.app.main import app
 
     api = AssistantApi(app=app)
     # override dependency to use test DB
-    app.dependency_overrides[get_postgres_engine] = get_postgres_engine_for_testing
-    yield api
+    app.dependency_overrides[get_postgres_session] = get_postgres_session_for_testing
+
+    return api
 
 
 @pytest.fixture(scope="session")
