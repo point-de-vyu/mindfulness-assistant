@@ -1,6 +1,5 @@
 from typing import List
 from pydantic import BaseModel
-from enum import Enum
 
 
 class SosRitualToCreate(BaseModel):
@@ -14,13 +13,3 @@ class SosRitualToCreate(BaseModel):
 
 class SosRitual(SosRitualToCreate):
     id: int | None = None
-
-
-class SosCategory(BaseModel):
-    id: int
-    name: str
-
-
-class SosSituation(BaseModel):
-    id: int
-    name: str

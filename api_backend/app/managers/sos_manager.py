@@ -3,10 +3,10 @@ from api_backend.app.schemes.sos_rituals import SosRitual
 from api_backend.app.schemes.sos_rituals import SosRitualToCreate
 from api_backend.app.schemes.error_messages import ErrorMsg
 from api_backend.db.models.sos import (
-    SosSituations,
-    SosCategories,
-    SosDefaultRitualIds,
-    UserRituals,
+    SosSituation,
+    SosCategory,
+    SosDefaultRitualId,
+    UserRitual,
 )
 import logging
 from typing import List
@@ -19,7 +19,7 @@ class SosSelfHelpManager:
         self.logger = logger
 
     def get_available_categories(self) -> List[str]:
-        query = sqlalchemy.select(SosCategories.name)
+        query = sqlalchemy.select(SosCategory.name)
         executed_query = self.db_session.execute(query)
         result = list(executed_query.scalars().all())
         if not result:
@@ -28,7 +28,7 @@ class SosSelfHelpManager:
         return result
 
     def get_available_situations(self) -> List[str]:
-        query = sqlalchemy.select(SosSituations.name)
+        query = sqlalchemy.select(SosSituation.name)
         executed_query = self.db_session.execute(query)
         result = list(executed_query.scalars().all())
         if not result:
@@ -98,7 +98,7 @@ class SosSelfHelpManager:
         return result
 
     def _get_category_id(self, category_name: str) -> int:
-        query = sqlalchemy.select(SosCategories.id).filter_by(name=category_name)
+        query = sqlalchemy.select(SosCategory.id).filter_by(name=category_name)
         result = self.db_session.execute(query)
         result = result.scalar_one_or_none()
         if not result:
@@ -106,7 +106,7 @@ class SosSelfHelpManager:
         return result
 
     def _get_situation_id(self, situation_name: str) -> int:
-        query = sqlalchemy.select(SosSituations.id).filter_by(name=situation_name)
+        query = sqlalchemy.select(SosSituation.id).filter_by(name=situation_name)
         result = self.db_session.execute(query)
         result = result.scalar_one_or_none()
         if not result:
@@ -114,7 +114,7 @@ class SosSelfHelpManager:
         return result
 
     def _is_existing_default_ritual_id(self, ritual_id: int) -> bool:
-        query = sqlalchemy.select(SosDefaultRitualIds.id).filter_by(id=ritual_id)
+        query = sqlalchemy.select(SosDefaultRitualId.id).filter_by(id=ritual_id)
         executed_query = self.db_session.execute(query)
         result = executed_query.scalar_one_or_none()
         if result:
@@ -125,15 +125,9 @@ class SosSelfHelpManager:
         if not self._is_existing_default_ritual_id(ritual_id):
             raise ValueError(ErrorMsg.SOS_DEFAULT_RITUAL_ID_INVALID)
 
-        query = sqlalchemy.insert(UserRituals).values(
-            user_id=user_id, ritual_id=ritual_id
-        )
-        executed_query = self.db_session.execute(query)
-        inserted_pkey = executed_query.inserted_primary_key
+        ritual = UserRitual(user_id=user_id, ritual_id=ritual_id)
+        self.db_session.add(ritual)
         self.db_session.commit()
-        if not inserted_pkey:
-            self.logger.critical(f"Failed to add {ritual_id=} for {user_id=}")
-            raise RuntimeError(ErrorMsg.FAILED_DB_RESULT)
         self.logger.info(f"Added {ritual_id=} for {user_id=}")
 
     def remove_ritual_from_user_data(self, user_id: int, ritual_id: int) -> None:

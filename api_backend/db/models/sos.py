@@ -5,21 +5,21 @@ from typing import Any
 from sqlalchemy import ForeignKey
 
 
-class SosSituations(Base):
+class SosSituation(Base):
     __tablename__ = "sos_situations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
 
 
-class SosCategories(Base):
+class SosCategory(Base):
     __tablename__ = "sos_categories"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
 
 
-class SosRituals(Base):
+class SosRitual(Base):
     __tablename__ = "sos_rituals"
 
     id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)
@@ -33,13 +33,13 @@ class SosRituals(Base):
     tags: Mapped[dict[str, Any]] = mapped_column(sqlalchemy.JSON)
 
 
-class SosDefaultRitualIds(Base):
+class SosDefaultRitualId(Base):
     __tablename__ = "sos_rituals_default_ids"
 
     id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)
 
 
-class UserRituals(Base):
+class UserRitual(Base):
     __tablename__ = "user_sos_ritual"
     # FK to users.id
     user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)

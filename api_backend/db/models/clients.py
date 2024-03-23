@@ -3,14 +3,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from api_backend.db.models.base import Base
 
 
-class ClientTypes(Base):
+class ClientType(Base):
     __tablename__ = "client_types"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
 
 
-class Clients(Base):
+class Client(Base):
     __tablename__ = "clients"
 
     id: Mapped[int] = mapped_column(primary_key=True)

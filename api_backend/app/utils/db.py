@@ -25,9 +25,13 @@ class Database:
             session.close()
 
     def get_db_url(self, db_name: str | None = None) -> str:
-        db_endpoint, main_db_name, db_username, db_password = self.get_db_connection_parameters()
+        db_endpoint, main_db_name, db_username, db_password = (
+            self.get_db_connection_parameters()
+        )
         db_name = db_name or main_db_name
-        return f"postgresql+psycopg2://{db_username}:{db_password}@{db_endpoint}/{db_name}"
+        return (
+            f"postgresql+psycopg2://{db_username}:{db_password}@{db_endpoint}/{db_name}"
+        )
 
     @staticmethod
     def get_db_connection_parameters():

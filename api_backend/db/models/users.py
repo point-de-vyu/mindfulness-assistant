@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from api_backend.db.models.base import Base
 
 
-class Users(Base):
+class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, primary_key=True)

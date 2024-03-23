@@ -3,9 +3,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api_backend.app.utils.db import Database, database
-from api_backend.db.models.clients import Clients, ClientsUsers
-from api_backend.db.models.users import Users
-from api_backend.db.models.sos import SosRituals, SosDefaultRitualIds
+from api_backend.db.models.clients import Client, ClientsUsers
+from api_backend.db.models.users import User
+from api_backend.db.models.sos import SosRitual, SosDefaultRitualId
 import sqlalchemy
 from sqlalchemy.orm import Session
 from requests import Response
@@ -84,38 +84,23 @@ class AssistantApi(TestClient):
         Deleting from users table will cascade to all tables where user_id is a FK.
         """
         session.execute(sqlalchemy.delete(ClientsUsers))
-        # session.execute(sqlalchemy.text("DELETE FROM clients_users;"))
-        session.execute(sqlalchemy.delete(Clients))
-        # session.execute(sqlalchemy.text("DELETE FROM clients;"))
-        session.execute(sqlalchemy.delete(Users))
-        # session.execute(sqlalchemy.text("DELETE FROM users;"))
+        session.execute(sqlalchemy.delete(Client))
+        session.execute(sqlalchemy.delete(User))
         session.execute(
-            sqlalchemy.delete(SosRituals).where(
-                SosRituals.id.notin_(sqlalchemy.select(SosDefaultRitualIds.id))
+            sqlalchemy.delete(SosRitual).where(
+                SosRitual.id.notin_(sqlalchemy.select(SosDefaultRitualId.id))
             )
         )
-        # session.execute(
-        #     sqlalchemy.text(
-        #         f"DELETE FROM {SosTable.RITUALS} "
-        #         f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});"
-        #     )
-        # )
+
         session.commit()
 
     def _add_authorised_client(self, session: Session) -> None:
         client_id = os.environ["TEST_CLIENT_ID"]
         client_type_id = os.environ["TEST_CLIENT_TYPE_ID"]
-        # session.execute(
-        #     sqlalchemy.text(
-        #         f"INSERT INTO clients VALUES("
-        #         f"{client_id}, {client_type_id}, '{self.client_auth_token}');"
-        #     )
-        # )
-        session.execute(
-            sqlalchemy.insert(Clients).values(
-                id=client_id, client_type_id=client_type_id, token=self.client_auth_token
-            )
+        test_client = Client(
+            id=client_id, client_type_id=client_type_id, token=self.client_auth_token
         )
+        session.add(test_client)
         session.commit()
 
     def _add_default_test_user(self, session: Session) -> None:
