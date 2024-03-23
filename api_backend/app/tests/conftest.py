@@ -2,13 +2,16 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-from api_backend.app.utils.db import Database
+from api_backend.app.utils.db import Database, database
 from api_backend.db.models.clients import Clients, ClientsUsers
 from api_backend.db.models.users import Users
 from api_backend.db.models.sos import SosRituals, SosDefaultRitualIds
 import sqlalchemy
 from sqlalchemy.orm import Session
 from requests import Response
+
+
+test_database = Database(name=os.environ["TEST_DB_NAME"])
 
 
 class AssistantApi(TestClient):
@@ -25,7 +28,7 @@ class AssistantApi(TestClient):
         super().__init__(**kwargs)
         self.client_auth_token = os.environ["TEST_CLIENT_AUTH_TOKEN"]
         self.user_id = int(os.environ["TEST_USER_ID"])
-        with Database.get_test_session() as session:
+        with test_database.get_session() as session:
             self.prepare_db(session)
             session.close()
 
@@ -134,7 +137,7 @@ def api():
 
     api = AssistantApi(app=app)
     # override dependency to use test DB
-    app.dependency_overrides[Database.get_session_dep] = Database.get_test_session_dep
+    app.dependency_overrides[database.get_session_dep] = test_database.get_session_dep
     yield api
 
 

@@ -3,7 +3,7 @@ import sqlalchemy
 import os
 from fastapi import Depends
 from fastapi import Header
-from api_backend.app.utils.db import Database
+from api_backend.app.utils.db import database
 from api_backend.app.utils.error_raisers import raise_401_error
 from api_backend.db.models.clients import Clients, ClientsUsers
 from api_backend.db.models.users import Users
@@ -17,7 +17,7 @@ def generate_token() -> str:
 
 def client_authentication(
     token: str = Header(alias=os.environ["HEADER_NAME_TOKEN"]),
-    db_session: Session = Depends(Database.get_session_dep),
+    db_session: Session = Depends(database.get_session_dep),
 ) -> int:
 
     # table = sqlalchemy.Table("clients", sqlalchemy.MetaData(), autoload_with=conn)
@@ -36,7 +36,7 @@ def client_authentication(
 def authentication(
     user_id_from_client: str = Header(alias=os.environ["HEADER_NAME_USER_ID"]),
     token: str = Header(alias=os.environ["HEADER_NAME_TOKEN"]),
-    db_session: Session = Depends(Database.get_session_dep),
+    db_session: Session = Depends(database.get_session_dep),
 ) -> int:
     user_id_from_client = int(user_id_from_client)
     client_id = client_authentication(token, db_session)
