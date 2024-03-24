@@ -82,7 +82,7 @@ def get_user_rituals(
     category: str | None = None,
     situation: str | None = None,
 ) -> List[SosRitual]:
-    logger.info(f"{user_id=} getting sos rituals their rituals")
+    logger.info(f"{user_id=} getting their sos rituals")
     try:
         user_rituals = sos_mng.get_user_rituals(
             user_id, category_name=category, situation_name=situation

@@ -5,6 +5,7 @@ from api_backend.app.routes import sos_rituals
 from fastapi.responses import HTMLResponse
 from api_backend.app.logger import set_up_logger
 
+
 app = FastAPI(title="Assistant API")
 
 logger = set_up_logger(set_up_stdout=True)

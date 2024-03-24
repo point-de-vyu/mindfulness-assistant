@@ -3,8 +3,10 @@ import sqlalchemy
 import os
 from fastapi import Depends
 from fastapi import Header
-from api_backend.app.utils.db import get_postgres_engine
+from api_backend.app.utils.db import database
 from api_backend.app.utils.error_raisers import raise_401_error
+from api_backend.db.models.clients import Client, ClientsUsers
+from sqlalchemy.orm import Session
 
 
 def generate_token() -> str:
@@ -13,11 +15,10 @@ def generate_token() -> str:
 
 def client_authentication(
     token: str = Header(alias=os.environ["HEADER_NAME_TOKEN"]),
-    db_engine: sqlalchemy.Engine = Depends(get_postgres_engine),
+    db_session: Session = Depends(database.get_session_dep),
 ) -> int:
-    conn = db_engine.connect()
-    table = sqlalchemy.Table("clients", sqlalchemy.MetaData(), autoload_with=conn)
-    executed_q = conn.execute(sqlalchemy.select(table.c.id).filter_by(token=token))
+
+    executed_q = db_session.execute(sqlalchemy.select(Client.id).filter_by(token=token))
     client_id = executed_q.scalar()
     if not client_id:
         raise_401_error()
@@ -27,14 +28,12 @@ def client_authentication(
 def authentication(
     user_id_from_client: str = Header(alias=os.environ["HEADER_NAME_USER_ID"]),
     token: str = Header(alias=os.environ["HEADER_NAME_TOKEN"]),
-    db_engine: sqlalchemy.Engine = Depends(get_postgres_engine),
+    db_session: Session = Depends(database.get_session_dep),
 ) -> int:
     user_id_from_client = int(user_id_from_client)
-    client_id = client_authentication(token, db_engine)
-    conn = db_engine.connect()
-    table = sqlalchemy.Table("clients_users", sqlalchemy.MetaData(), autoload_with=conn)
-    executed_q = conn.execute(
-        sqlalchemy.select(table.c.user_id).filter_by(
+    client_id = client_authentication(token, db_session)
+    executed_q = db_session.execute(
+        sqlalchemy.select(ClientsUsers.user_id).filter_by(
             client_id=client_id, user_id_from_client=user_id_from_client
         )
     )

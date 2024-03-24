@@ -2,15 +2,16 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-from api_backend.app.utils.db import get_postgres_engine
-from api_backend.app.schemes.sos_rituals import SosTable
+from api_backend.app.utils.db import Database, database
+from api_backend.db.models.clients import Client, ClientsUsers
+from api_backend.db.models.users import User
+from api_backend.db.models.sos import SosRitual, SosDefaultRitualId
 import sqlalchemy
+from sqlalchemy.orm import Session
 from requests import Response
 
 
-def get_postgres_engine_for_testing() -> sqlalchemy.engine.Engine:
-    test_db_name = os.environ["TEST_DB_NAME"]
-    return get_postgres_engine(db_name=test_db_name)
+test_database = Database(name=os.environ["TEST_DB_NAME"])
 
 
 class AssistantApi(TestClient):
@@ -25,13 +26,16 @@ class AssistantApi(TestClient):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        engine = get_postgres_engine_for_testing()
         self.client_auth_token = os.environ["TEST_CLIENT_AUTH_TOKEN"]
-        with engine.connect() as connection:
-            self._reset_db(connection)
-            self._add_authorised_client(connection)
-            self._add_default_test_user(connection)
-        connection.close()
+        self.user_id = int(os.environ["TEST_USER_ID"])
+        with test_database.get_session() as session:
+            self.prepare_db(session)
+            session.close()
+
+    def prepare_db(self, session: Session):
+        self._reset_db(session)
+        self._add_authorised_client(session)
+        self._add_default_test_user(session)
 
     def _get_auth_headers(self, token: str | None = None, user_id: int | None = None):
         token = token or self.client_auth_token
@@ -75,45 +79,41 @@ class AssistantApi(TestClient):
         )
 
     @staticmethod
-    def _reset_db(connection: sqlalchemy.Connection) -> None:
+    def _reset_db(session: Session) -> None:
         """
         Deleting from users table will cascade to all tables where user_id is a FK.
         """
-        connection.execute(sqlalchemy.text("DELETE FROM clients_users;"))
-        connection.execute(sqlalchemy.text("DELETE FROM clients;"))
-        connection.execute(sqlalchemy.text("DELETE FROM users;"))
-        connection.execute(
-            sqlalchemy.text(
-                f"DELETE FROM {SosTable.RITUALS} "
-                f"WHERE id NOT IN (SELECT id FROM {SosTable.DEFAULT_IDS});"
+        session.execute(sqlalchemy.delete(ClientsUsers))
+        session.execute(sqlalchemy.delete(Client))
+        session.execute(sqlalchemy.delete(User))
+        session.execute(
+            sqlalchemy.delete(SosRitual).where(
+                SosRitual.id.notin_(sqlalchemy.select(SosDefaultRitualId.id))
             )
         )
-        connection.commit()
 
-    def _add_authorised_client(self, connection: sqlalchemy.Connection) -> None:
+        session.commit()
+
+    def _add_authorised_client(self, session: Session) -> None:
         client_id = os.environ["TEST_CLIENT_ID"]
         client_type_id = os.environ["TEST_CLIENT_TYPE_ID"]
-        token = self.client_auth_token
-        connection.execute(
-            sqlalchemy.text(
-                f"INSERT INTO clients VALUES("
-                f"{client_id}, {client_type_id}, '{token}');"
-            )
+        test_client = Client(
+            id=client_id, client_type_id=client_type_id, token=self.client_auth_token
         )
+        session.add(test_client)
+        session.commit()
 
-    def _add_default_test_user(self, connection: sqlalchemy.Connection) -> None:
+    def _add_default_test_user(self, session: Session) -> None:
         username = os.environ["TEST_USERNAME"]
         first_name = os.environ["TEST_FIRSTNAME"]
         last_name = os.environ["TEST_LASTNAME"]
         client_id = os.environ["TEST_CLIENT_ID"]
-        user_id = os.environ["TEST_USER_ID"]
-        self.user_id = int(user_id)
-        connection.execute(
+        session.execute(
             sqlalchemy.func.add_new_user(
-                username, first_name, last_name, client_id, user_id
+                username, first_name, last_name, client_id, self.user_id
             )
         )
-        connection.commit()
+        session.commit()
 
 
 @pytest.fixture(scope="session")
@@ -122,7 +122,7 @@ def api():
 
     api = AssistantApi(app=app)
     # override dependency to use test DB
-    app.dependency_overrides[get_postgres_engine] = get_postgres_engine_for_testing
+    app.dependency_overrides[database.get_session_dep] = test_database.get_session_dep
     yield api
 
 

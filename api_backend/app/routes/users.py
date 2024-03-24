@@ -47,24 +47,6 @@ def get_user(user_mng: UserMngDep, user_id: int = Depends(authentication)) -> Us
     return user
 
 
-@router.get("/user_by_username/{username}", summary="Get user by their unique username")
-def get_user_by_username(username: str, user_mng: UserMngDep) -> User:
-    logger.info(f"Getting user data for {username=}")
-    user = user_mng.get_by_username(username)
-    if not user:
-        raise_404_error(ErrorMsg.USER_NOT_FOUND)
-    return user
-
-
-@router.get("/user_by_id/{id}", summary="Get user by their unique id")
-def get_user_by_username(id: int, user_mng: UserMngDep) -> User:
-    logger.info(f"Getting user data for {id=}")
-    user = user_mng.get_by_id(id)
-    if not user:
-        raise_404_error(ErrorMsg.USER_NOT_FOUND)
-    return user
-
-
 @router.delete("/users/", summary="Delete user and all their data")
 def delete_user(user_mng: UserMngDep, user_id: int = Depends(authentication)) -> None:
     logger.info(f"Deleting user data for {user_id=}")
