@@ -46,4 +46,4 @@ class Database:
         return endpoint, main_db, username, password
 
 
-database = Database(name="example")
+database = Database()
