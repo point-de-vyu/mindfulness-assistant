@@ -1,8 +1,7 @@
 from sqlalchemy import BigInteger, JSON, VARCHAR, TEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from api_backend.db.models.base import Base
-from api_backend.db.models.users import User
-from typing import Any
+from typing import Any, List
 from sqlalchemy import ForeignKey
 
 
@@ -12,12 +11,16 @@ class SosSituation(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(VARCHAR(length=50))
 
+    rituals: Mapped[List["SosRitual"]] = relationship()
+
 
 class SosCategory(Base):
     __tablename__ = "sos_categories"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(VARCHAR(length=30))
+
+    rituals: Mapped[List["SosRitual"]] = relationship()
 
 
 class SosRitual(Base):
@@ -35,8 +38,7 @@ class SosRitual(Base):
     url: Mapped[str] = mapped_column(TEXT)
     tags: Mapped[dict[str, Any]] = mapped_column(JSON)
 
-    sos_category = relationship(SosCategory)
-    sos_situation = relationship(SosSituation)
+    added_rituals: Mapped[List["UserRitual"]] = relationship()
 
 
 class SosDefaultRitualId(Base):
@@ -47,12 +49,10 @@ class SosDefaultRitualId(Base):
 
 class UserRitual(Base):
     __tablename__ = "user_sos_ritual"
+
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     ritual_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("sos_rituals.id", ondelete="CASCADE"), primary_key=True
     )
-
-    user = relationship(User)
-    ritual = relationship(SosRitual)

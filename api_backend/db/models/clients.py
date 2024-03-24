@@ -1,7 +1,7 @@
 from sqlalchemy import Integer, BigInteger, VARCHAR, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from api_backend.db.models.base import Base
-from api_backend.db.models.users import User
+from typing import List
 
 
 class ClientType(Base):
@@ -9,6 +9,8 @@ class ClientType(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(VARCHAR(length=30))
+
+    clients: Mapped[List["Client"]] = relationship()
 
 
 class Client(Base):
@@ -20,7 +22,7 @@ class Client(Base):
     )
     token: Mapped[str] = mapped_column(VARCHAR(length=64))
 
-    client_type = relationship(ClientType)
+    users: Mapped[List["ClientsUsers"]] = relationship()
 
 
 class ClientsUsers(Base):
@@ -33,6 +35,3 @@ class ClientsUsers(Base):
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="CASCADE")
     )
-
-    user = relationship(User)
-    client = relationship(Client)
