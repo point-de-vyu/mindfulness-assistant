@@ -8,6 +8,7 @@ from aiogram.types import (
     Message,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    ReplyKeyboardRemove,
 )
 
 
@@ -17,9 +18,13 @@ router = Router()
 @router.callback_query(F.data == "sign_up")
 async def sign_up(callback: CallbackQuery):
     user = callback.from_user
+    if not user.username:
+        await set_username_to_begin(callback)
+        return
+
     new_user = {
-        "first_name": user.first_name,
-        "last_name": user.last_name,
+        "first_name": user.first_name or "",
+        "last_name": user.last_name or "",
         "username": user.username,
         "id_from_client": user.id,
     }
@@ -68,4 +73,12 @@ async def forbidden_need_signing_up(message: Message):
                 [InlineKeyboardButton(text="Sign up", callback_data="sign_up")]
             ]
         ),
+    )
+
+
+async def set_username_to_begin(callback: CallbackQuery):
+    await callback.message.answer(
+        text="It appears you don't have a username. Sorry, but I will need it to store your data, "
+        "so please fix it in the settings and come back to begin again!",
+        reply_markup=ReplyKeyboardRemove(),
     )
