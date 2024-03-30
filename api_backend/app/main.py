@@ -4,6 +4,7 @@ from api_backend.app.routes import users
 from api_backend.app.routes import sos_rituals
 from fastapi.responses import HTMLResponse
 from api_backend.app.logger import set_up_logger
+import os
 
 
 app = FastAPI(title="Assistant API")
@@ -14,8 +15,6 @@ app.include_router(users.router, prefix="/v1")
 app.include_router(sos_rituals.router, prefix="/v1")
 
 
-# TODO figure out future versioning
-# TODO will have to add CORS https://fastapi.tiangolo.com/tutorial/cors/
 @app.get(
     "/",
     summary="Index page",
@@ -30,7 +29,7 @@ def root() -> str:
 
 def main() -> None:
     logger.info("Start api_backend service locally")
-    uvicorn.run("main:app", host="0.0.0.0", port=80)
+    uvicorn.run("main:app", host=os.environ["HOST"], port=int(os.environ["PORT"]))
 
 
 if __name__ == "__main__":
