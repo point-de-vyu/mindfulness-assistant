@@ -12,12 +12,14 @@ from telegram_client.app.handlers.sos import (
 )
 from telegram_client.app.handlers import undef
 
-memory_storage = MemoryStorage()
-
 
 async def main():
     bot = Bot(token=os.environ["BOT_TOKEN"])
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] %(levelname)s %(name)s : %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
     dispatcher = Dispatcher(storage=MemoryStorage())
     dispatcher.include_router(start.router)
     dispatcher.include_routers(sign_up.router, delete_account.router)
