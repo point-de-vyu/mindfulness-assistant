@@ -2,7 +2,7 @@ import logging
 import sys
 
 main_logger = logging.getLogger(__name__)
-main_logger.setLevel(logging.DEBUG)
+main_logger.setLevel(logging.INFO)
 
 
 def set_up_logger(
@@ -11,7 +11,7 @@ def set_up_logger(
     global main_logger
     main_logger.handlers = []
     formatter = logging.Formatter(
-        "[%(asctime)s] !%(name)s! ->%(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S"
+        "[%(asctime)s] %(levelname)s %(name)s : %(message)s", "%Y-%m-%d %H:%M:%S"
     )
     if set_up_stdout:
         console_handler = logging.StreamHandler(sys.stdout)
