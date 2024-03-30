@@ -66,7 +66,7 @@ async def show_sos_situations(message: Message, state: FSMContext):
         await forbidden_need_signing_up(message)
     else:
         # LESSON_LEARNT once "auth" removed from token alias, started working
-        logging.error(response.json()["detail"])
+        logging.error(response.json())
         await error(message)
 
 
